@@ -1,1 +1,255 @@
 
+<!DOCTYPE html>
+<html>
+    
+    <head>
+      <title>Project 1: Warming up</title>
+      <meta name="author" content="Sidsel Boldsen & Mai-Britt Gudmundsson Kristiansen">
+      
+      <style>
+        /* 417ACO */
+        body {
+            /*font-family:Big Caslon;*/
+            font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;
+            font-size:11pt;
+            
+            /* corner,  width*/
+            margin:2% 20%;
+            background-color: white; 
+            color:#302D2D;
+        }
+        
+         html { background-color: #ECECEC; 
+        }        
+        
+        a:link {
+            color: 302D2D;
+        }
+        
+        /* visited link */
+        a:visited {
+            color: #302D2D;
+        }
+        
+        /* mouse over link */
+        a:hover {
+            color: #4d4dff;
+        }        
+      .floatdiv{
+            position: relative;
+            float: right;
+            width: 230px;
+            height: 250px;
+      }
+        
+        h1, h2, h3, h4, h5 {
+            color:#900C3F;
+            position: relative;
+            text-align: center;
+            font-variant: bold;
+            /*font-variant: small-caps*/
+            
+        }
+
+        h1 {text-decoration: underline;
+        
+        }
+        
+        h3, h4, h5 {
+            position: relative;
+            text-align: left;
+            top:-1e;
+            /*font-variant: small-caps;*/
+            
+        }
+        
+        div {
+            position: relative;
+            top:10%;             margin:2% 2%;
+
+        }
+
+        #image-container{
+            position: relative;
+            text-align: center;
+            float:center;
+
+        }
+        
+        img {
+            margin: 0 0 5px 5px;
+            display:inline-block;
+            /*border-style: solid;*/
+            /*border-width: 2px;*/
+            border: 2.5px solid;
+            border-color: #DDDDDD;
+            
+        }
+
+        }
+        div.info {
+            
+        }        
+        
+        p {
+            position: relative;
+            top:-1em;
+            text-align:justify;
+        }
+        
+        
+        span.tag {
+            font-variant: bold;
+            color: 817C7C;
+            position: relative;
+
+        }
+        
+        span.desc {
+            position: absolute;
+            left: 10%;
+            color:#403E3E;
+        }
+        
+        
+        li {color: #FF5733;
+            
+        }
+        
+      </style>
+      
+      <script>
+        window.onload = function () { 
+            
+            var to_div = document.getElementById('image-container');
+            
+            /* var img_div = document.createElement("div") */;
+            /* img_div.id = "image-js"; */
+            
+            var img = new Image();
+            
+            img.src = 'https://d13yacurqjgara.cloudfront.net/users/59947/screenshots/1922138/muti-1a.jpg';
+
+            img.height = 200;
+            img.title  = "With js"
+            img.width  = 280;
+            
+            /* img_div.appendChild(img);*/
+            to_div.appendChild(img)
+              }
+        
+      </script>
+      
+    </head>
+
+    <body>
+        </br>
+    <div class="info">
+            <p class="meta">
+                <span class="tag">Group:</span> 
+                <span class="desc">Sidsel Boldsen & Mai-Britt Gudmundsson Kristiansen</span>
+                <br>
+                <span class="tag">Date:</span> 
+                <span class="desc">November 29th 2016</span>
+                
+            </p>
+    </div>
+        
+    <div id="title">
+                   
+        <h1>Project 1: Warming up</h1>
+        
+    </div>
+    
+    <div id="index">
+                   
+        <ul>
+            <li><a href="#images">Images</a></li>
+            <li><a href="#visualizations">Visualizations</a></li>
+            <li><a href="#individual">Individual parts</a></li>
+        </ul>
+
+    </div>
+         
+    <div id="content">
+
+            <div id="images">
+                <h2>Images</h2>
+                
+                
+                <div id="image-container">
+                   <img class=image id="htmlpic" src="http://www.youramazingplaces.com/wp-content/uploads/2014/06/sunset-5.jpg" alt="Sunset" title="With HTML" height="200" width="280">
+
+                </div>
+                
+            <hr>   
+            </div>
+            
+            
+            <div id="visualizations">
+            <h2>Visualizations</h2>
+                <p>
+                In this section we will evaluate two examples of interactive data visualization.
+                <ol>
+                    <li><a href="#NN">Neural Network Models</a></li>
+                    <li><a href="#dialect">Map of Danish Dialects</a></li>
+                </ol>
+                </p>
+                
+                <div id="NN">
+                <h3><a href="http://playground.tensorflow.org/">Neural Network Models</a></h3>
+                
+                <h3>Description</h3>
+                <p>The visualization shows how a neural network classifier works on a dataset. The visualization gives the user the opportunity to tweak the dataset as well as the network using different parameters (learning rate, batch size, number of hidden layers and features, dataset type, etc). When all parameters are set (either manually by the user or automatically using the default settings), the user can press a button which starts the neural network learning simulation in which he will be able to see how the classification on the data set progresses with time up until the point when no more changes are made to the classes assigned to the points in the dataset.</p>
+                <h3>Positives</h3><p>The high number of parameters that the user is able to set makes it possible to simulate more different kinds of situations. This helps to better understand how neural networks work, because the user is able to see how they work on different kinds of data with different settings.</p><p>Further, the two colors that are used to classify the data into two groups are very different (blue and orange) which makes the classes easily distinguishable. Also, the colors are used with different intensities indicating how confident a certain prediction is. This increases the information that the visualization conveys even more.</p>
+                <h3>Negatives</h3><p>Even though the high number of variables can be seen as a good thing, it can also be a problem as the visualization may seem overwhelming or confusing for a user. Especially for users that are not very familiar with neural networks, the possiblity to tweak so many parameters may result in even more confusion about how neural networks work. However, the text underneath the visualization helps understand how the visualization works and what the different parameters mean. But that is less clear from the visualization itself.</p><p>Another problem with the visualization is how the hidden layers are visualized. The more layers that are added to the network, the lower the intensity of the classification colors is. Therefore, despite the fact that this showcases the unclarity of the underlying mechanisms in a neural network, it becomes quite unclear what information the low intensity layers convey.</p>
+            
+            </div>
+            <div id="dialect">
+                <h3><a href="http://dialekt.ku.dk/dialektkort/">Map of Danish Dialects</a></h3>
+                
+                <h3>Description</h3>
+                <p>The map visualizes the distribution of Danish dialects with respect to numerous different linguistic features (e.g. where do people say <em>æ</em> 'I' instead of <em>jeg</em> 'I'). The user is able to choose one of the several layers of the map to view the distribution of these features. Further, the user is at every layer allowed to hear examples of both young and old speakers from a specific region by clicking on coloured dots pinned to the map.</p>
+                <h3>Positives</h3>
+                <p>The map visualizes the distribution of the dialects with both colors and patterns, which enables the user to deduce similarity/overlap between different features easily. Having the dialect examples pinned to the map allows the user to 'dive' into the regional differences where more exhaustive and detailed information is available. In this way the user is able to keep an overview of the overall tendencies while exploring single data points qualitively.</p>
+                <h3>Negatives</h3>
+                <p>The map contains a lot of information and even though it makes use of different features to try to partion the data into different levels of information detail, a great overview is still missing. The map is good for browsing and discovering fun features, but it is not fit for surveying regional differences. Being able to select different feature layers on top of each other (e.g. by weightening with color saturation) would definitely help to compare the different features and their distribution on the regions.</p>
+                
+            </br>
+            <hr>
+            </div>
+            
+            </div>
+            <div id="individual">
+            <h2>Individual parts</h2>
+            
+            <h3>Sidsel</h3>
+            <div class="floatdiv">
+            <a href="http://www.tmurrayarts.com/journeys/historic-photographs/masferre-photographs-2-2/"><img class="image" style="float: right;" src="http://www.tmurrayarts.com/files/3113/1172/0553/Posters-11x15_Layout_1_Page_07.jpg" height="200" width="180"></a>
+            </div>
+            
+            <p>I think graphs would be an interesting data structure to try and visualize. Graphs vary greately with respect to nubmer of data points, how different nodes are connected and how different connections are weighted and what semantics those carry. </br> </br>
+                Topology is an example of what a graph can express and I could imagine doing a project on that. Topology can both be viewed as a 'local' feature between two elements but might also be viewed 'globally' comparing the different kinds of relations between data points.
+            </p>
+            <p>
+                An idea for a project could be to visualize <em>names</em> or <em>word</em> and where they come from. A classic example of how to visualize such a structure is by creating a tree with <em>roots</em> and <em>brances</em>. It would be cool to create a model to create such trees generically, choosing e.g. unique relations (e.g. <em>Danish</em> name or <em>German</em> name) or tags (e.g. <em>biblical</em> name) as branches.
+            </p>
+            <p>
+                Wanting to work with words one could try to scrape or aquire a dump from <a href="https://en.wiktionary.org/wiki/Wiktionary:Main_Page">Wiktionary</a>, which annotate connections between different words.
+            </p>
+            <p>
+                To enable the viewer to get an overview over the dataset or different parts of the dataset would be a goal, so that the different relations of the dataset could be explored.
+        
+            </p>
+                
+            
+            
+            <h3>Mai-Britt</h3>
+            <p>Very much in line with the neural network visualization  above, I would like to be able to make a visualization that could show how different classification algorithms (k-nearest neighbor, logistic regression etc) work on data. The data would be randomly generated using different parameter settings (like type and size of data, mean and variance) that can be manually set by a user. The algorithm settings can be tweaked as well (like the value of k in k-nearest neighbor). This will help to show how the algorithms work with many different kinds of data and not just one or two types as is most often the case when you search online for how the algorithms work.</p><p>The visualization would be accompanied with some text explaining the most important characteristics of the algorithm in question, if possible in bullet points to make the information conveyed as clear as it can be.</p><p>The audience would be high school or university students that take courses in machine learning, data science or the likes and other people who are interested in these topics.</p></br>
+        </div>
+        </div>
+    </body>
+
+
+
+</html>
