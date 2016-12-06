@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width">
-  <title>IDE Project II</title>
+  <title>JS Bin</title>
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/2.3.2/css/bootstrap.min.css"/>
   <script src="https://d3js.org/d3.v3.min.js"></script>
   <script src="https://d3js.org/d3-color.v1.min.js"></script>
@@ -118,7 +118,7 @@ function init(){
     var dataset=d;
     console.log(dataset)      
   
-  var xrange = [50, 750];
+  var xrange = [40, 680];
   var yrange = [30, 430];
 
   var height = 500;
@@ -167,7 +167,7 @@ var colorScale2 = d3.scale.linear()
     .append("g")
     .style("fill", "white")
     .attr('class', 'axis')
-    .attr("transform", "translate(" + 50 + ",0)")
+    .attr("transform", "translate(" + 40 + ",0)")
     .call(yAxisp1);
 
   // Setting x label
@@ -186,7 +186,7 @@ var colorScale2 = d3.scale.linear()
     .attr("transform", "rotate(-90)")
     .style('text-anchor', 'middle')
     .attr('x', 0-(height/2-10))
-    .attr('y', 25)
+    .attr('y', 15)
     .text('Temperature in °C')
 
   d3.select("#plot1")
@@ -251,7 +251,7 @@ d3.select("#plot1")
 d3.select("#plot1")
     .append("g")
     .attr("class","legend")
-    .attr("transform","translate(820,30)")
+    .attr("transform","translate(700,30)")
     .style("font-size","13px")
     .call(d3.legend)
 
@@ -659,9 +659,10 @@ div{
 .scatter.graph {
   height: 175px;
   width: 175px;
+  padding: 0px;
   margin-top:0px !important;
   margin-bottom:-20px !important;
-  margin-left:0px !important;
+  margin-left:-30px !important;
   margin-right:0px !important;
 
 }
@@ -676,10 +677,10 @@ div{
 
 }
 .span2 {
-
-margin-left:0px !important;
-
+margin-left:-20px !important;
+margin-bottom:-20px
 }
+
 .graph .grid {
   stroke: #ccc;
   stroke-dasharray: 0;
@@ -697,8 +698,8 @@ margin-left:0px !important;
   fill: black;
 }
 #scale{
-  margin-top: 20px;
-  margin-left: 60px;
+  margin-top: -150px;
+  margin-left: -15px;
 }
 .axis path,
 .axis line {
@@ -836,10 +837,9 @@ h4{
       </div>      
       <div class="span2">
         <svg id="plot14" class="graph scatter"> </svg>
+        <img src="bluehue.png" id="scale" title="Colorscale", height="30", width="30">
       </div>
-         <div class="span1">
-      <img src="bluehue.png" id="scale" title="Colorscale", height="50", width="50">
-    </div>
+
     </br>
 
     </div>
