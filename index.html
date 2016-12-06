@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width">
+  <title>IDE Project II</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/2.3.2/css/bootstrap.min.css"/>
+  <script src="https://d3js.org/d3.v3.min.js"></script>
+  <script src="https://d3js.org/d3-color.v1.min.js"></script>
+  <script src="https://d3js.org/d3-interpolate.v1.min.js"></script>
+  <script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
+  <script>
+
+    // d3.legend.js 
+    // (C) 2012 ziggy.jonsson.nyc@gmail.com
+    // MIT licence
+
+    (function() {
+    d3.legend = function(g) {
+      g.each(function() {
+        var g= d3.select(this),
+            items = {},
+            svg = d3.select(g.property("nearestViewportElement")),
+            legendPadding = g.attr("data-style-padding") || 5,
+            lb = g.selectAll(".legend-box").data([true]),
+            li = g.selectAll(".legend-items").data([true])
+
+        lb.enter().append("rect").classed("legend-box",true)
+        li.enter().append("g").classed("legend-items",true)
+
+        svg.selectAll("[data-legend]").each(function() {
+            var self = d3.select(this)
+            items[self.attr("data-legend")] = {
+              pos : self.attr("data-legend-pos") || this.getBBox().y,
+              color : self.attr("data-legend-color") != undefined ? self.attr("data-legend-color") : self.style("fill") != 'none' ? self.style("fill") : self.style("stroke") 
+            }
+          })
+
+        items = d3.entries(items).sort(function(a,b) { return a.value.pos-b.value.pos})
+
+        
+        li.selectAll("text")
+            .data(items,function(d) { return d.key})
+            .call(function(d) { d.enter().append("text")})
+            .call(function(d) { d.exit().remove()})
+            .attr("y",function(d,i) { return i+"em"})
+            .attr("x","1em")
+            .text(function(d) { ;return d.key})
+        
+        li.selectAll("circle")
+            .data(items,function(d) { return d.key})
+            .call(function(d) { d.enter().append("circle")})
+            .call(function(d) { d.exit().remove()})
+            .attr("cy",function(d,i) { return i-0.25+"em"})
+            .attr("cx",0)
+            .attr("r","0.4em")
+            .style("fill",function(d) { console.log(d.value.color);return d.value.color})  
+        
+        // Reposition and resize the box
+        var lbbox = li[0][0].getBBox()  
+        lb.attr("x",(lbbox.x-legendPadding))
+            .attr("y",(lbbox.y-legendPadding))
+            .attr("height",(lbbox.height+2*legendPadding))
+            .attr("width",(lbbox.width+2*legendPadding))
+      })
+      return g
+    }
+    })()
+
+d3.select(window).on("load", init)
+
+  
+function init(){ 
+  
+  function lineFunction(d, x, y, xrange, yrange){
+    console.log(d)
+    var arr = [];
+
+    var margin = 10;
+
+     //Set xscale
+    var xScale = d3.scale.linear()
+                         .domain([1880, 2015])//d3.min(d, function(d) { return d[x];}), 
+                                              //d3.max(d, function(d) { return d[x];})])
+                         .range(xrange);
+    //Set yscale
+    var yScale = d3.scale.linear()
+                         .domain([22, -7])   //d3.min(d, function(d) { return d[y]; }), 
+                                              //d3.max(d, function(d) { return d[y]; })])
+                         .range(yrange);
+
+    console.log([d3.min(d, function(d) { return d[x];}), d3.max(d, function(d) { return d[x];})])
+    console.log([d3.min(d, function(d) { return d[y];}), d3.max(d, function(d) { return d[y];})])
+
+    for (var i in d){
+       arr.push([xScale(d[i][x]), yScale(d[i][y])])
+    }
+     console.log(arr)
+     return arr;
+  }      
+  
+
+  d3.csv("cph.csv", function(error, d) {
+    
+    if (error) {  //If error is not null, something went wrong.
+      console.log(error);  //Log the error.
+    } 
+    else {      //If no error, the file loaded correctly. Yay!
+      console.log(d);   //Log the data.  
+      }
+    
+    d['Average'] = +d['Average']
+    d['Spring']  = +d['Spring']
+    d['Fall']    = +d['Fall']
+    d['Winter']  = +d['Winter']
+    d['Summer']  = +d['Summer']
+    
+    var dataset=d;
+    console.log(dataset)      
+  
+  var xrange = [50, 750];
+  var yrange = [30, 430];
+
+  var height = 500;
+  var width = 900;
+
+  var xScalep1 = d3.scale.linear().domain([1880, 2015]).range(xrange);
+                         
+  var yScalep1 = d3.scale.linear().domain([19, -3.4]).range(yrange);
+
+  var xAxisp1 = d3.svg.axis()
+            .scale(xScalep1)
+            .orient("bottom")
+            .ticks(5)
+            .tickFormat(d3.format("d"));
+
+  var yAxisp1 = d3.svg.axis()
+            .scale(yScalep1)
+            .orient("left")
+            .ticks(5);
+
+var colorScale2 = d3.scale.linear()
+        .domain([4, 13])
+        .range([1, 0]);
+
+  function average(d, col){
+    var total = 0;
+    for(var i = 0; i < d.length; i++) {
+        total += d[i][col];
+  }
+    var avg = total / d.length
+    return avg
+  }
+
+  // LINE PLOTS
+
+  // Setting x axis
+  d3.select('#plot1')
+    .append("g")
+    .style("fill", "white")
+    .attr('class', 'axis')
+    .attr("transform", "translate(0," + (height-70) + ")")
+    .call(xAxisp1);
+
+  // Setting y axis
+  d3.select('#plot1')
+    .append("g")
+    .style("fill", "white")
+    .attr('class', 'axis')
+    .attr("transform", "translate(" + 50 + ",0)")
+    .call(yAxisp1);
+
+  // Setting x label
+  d3.select('#plot1')
+    .append('text')
+    .style("fill", "white")
+    .style("text-anchor", "middle")
+    .attr("x", height/1.2)
+    .attr("y", width/1.9)
+    .text("Year");
+
+  // Setting y label
+  d3.select('#plot1')
+    .append("text")
+    .style("fill", "white")
+    .attr("transform", "rotate(-90)")
+    .style('text-anchor', 'middle')
+    .attr('x', 0-(height/2-10))
+    .attr('y', 25)
+    .text('Temperature in °C')
+
+  d3.select("#plot1")
+    .append("g")
+    .attr("class", "grid x-grid")
+    .append("line")
+    .attr("x1", xrange[0])
+    .attr("x2", xrange[0])
+    .attr("y1", yrange[0])
+    .attr("y2", yrange[1]);
+
+  d3.select("#plot1")
+    .append("g")
+    .attr("class", "grid y-grid")
+    .append("line")
+    .attr("x1", xrange[0])
+    .attr("x2", xrange[1])
+    .attr("y1", yrange[1])
+    .attr("y2", yrange[1]);
+
+ d3.select("#plot1")
+    .append("g")
+    .attr("class", "data")
+    .append("polyline")
+    .attr("fill", "none")
+    .attr("data-legend", "Winter")
+    .attr("stroke", d3.interpolateRdYlBu(colorScale2(1.02))) //Automatically retrieve avg of columns by average(d, col) above
+    .attr("stroke-width", "3")
+    .attr("points", lineFunction(dataset, "Year", "Winter", xrange, yrange))
+
+  d3.select("#plot1")
+    .append("g")
+    .attr("class", "data")
+    .append("polyline")
+    .attr("fill", "none")
+    .attr("data-legend", "Summer")
+    .attr("stroke", d3.interpolateRdYlBu(colorScale2(16.7)))
+    .attr("stroke-width", "3")
+    .attr("points", lineFunction(dataset, "Year", "Summer", xrange, yrange))
+
+d3.select("#plot1")
+    .append("g")
+    .attr("class", "data")
+    .append("polyline")
+    .attr("fill", "none")
+    .attr("data-legend", "Spring")
+    .attr("stroke", d3.interpolateRdYlBu(colorScale2(6.97)))
+    .attr("stroke-width", "3")
+    .attr("points", lineFunction(dataset, "Year", "Spring", xrange, yrange))
+
+d3.select("#plot1")
+    .append("g")
+    .attr("class", "data")
+    .append("polyline")
+    .attr("fill", "none")
+    .attr("data-legend", "Fall")
+    .attr("stroke", d3.interpolateRdYlBu(colorScale2(9.28)))
+    .attr("stroke-width", "3")
+    .attr("points", lineFunction(dataset, "Year", "Fall", xrange, yrange))
+
+
+d3.select("#plot1")
+    .append("g")
+    .attr("class","legend")
+    .attr("transform","translate(820,30)")
+    .style("font-size","13px")
+    .call(d3.legend)
+
+var xrange = [30, 140];
+var yrange = [30, 140];
+  
+// SCATTER PLOTS
+
+var xsummerScale = d3.scale.linear()
+                         .domain([14.5, 19])   
+                         //.domain([d3.min(d, function(d) { return d["Summer"]; }), 
+                         //d3.max(d, function(d) { return d["Summer"]; })])
+                         .range(xrange);
+
+var ysummerScale = d3.scale.linear()
+                         .domain([19, 14.5])   
+                         //.domain([d3.min(d, function(d) { return d["Summer"]; }), 
+                         //d3.max(d, function(d) { return d["Summer"]; })])
+                         .range(xrange);
+
+var xwinterScale = d3.scale.linear()
+                         .domain([-3.4, 4.9])   
+                         // .domain([d3.min(d, function(d) { return d["Winter"]; }), 
+                         //d3.max(d, function(d) { return d["Winter"]; })])
+                         .range(xrange);
+
+
+var ywinterScale = d3.scale.linear()
+                         .domain([4.9, -3.4])   
+                         // .domain([d3.min(d, function(d) { return d["Winter"]; }), 
+                         //d3.max(d, function(d) { return d["Winter"]; })])
+                         .range(xrange);
+
+
+var xfallScale = d3.scale.linear()
+                         .domain([6.9, 12.6])   
+                         // .domain([d3.min(d, function(d) { return d["Fall"]; }), 
+                         //d3.max(d, function(d) { return d["Fall"]; })])
+                         .range(xrange);
+
+var yfallScale = d3.scale.linear()
+                         .domain([12.6, 6.9])   
+                         // .domain([d3.min(d, function(d) { return d["Fall"]; }), 
+                         //d3.max(d, function(d) { return d["Fall"]; })])
+                         .range(xrange);
+
+var xspringScale = d3.scale.linear()
+                         .domain([3.8, 10])   
+                         // .domain([d3.min(d, function(d) { return d["Spring"]; }), 
+                         //d3.max(d, function(d) { return d["Spring"]; })])
+                         .range(xrange);
+
+var yspringScale = d3.scale.linear()
+                         .domain([10, 3.8])   
+                         // .domain([d3.min(d, function(d) { return d["Spring"]; }), 
+                         //d3.max(d, function(d) { return d["Spring"]; })])
+                         .range(xrange);
+
+var xaverageScale = d3.scale.linear()
+                         .domain([6.46, 10.56])   
+                          //.domain([d3.min(d, function(d) { return d["Average"]; }), 
+                         //d3.max(d, function(d) { return d["Average"]; })])
+                         .range([xrange]);
+
+var yaverageScale = d3.scale.linear()
+                         .domain([10.56, 6.46])   
+                          //.domain([d3.min(d, function(d) { return d["Average"]; }), 
+                         //d3.max(d, function(d) { return d["Average"]; })])
+                         .range([xrange]);
+
+var colorScale = d3.scale.linear()
+        .domain([1880, 2015])
+        .range([0.15, 1]);
+
+d3.selectAll(".scatter.graph")
+    .append("g")
+    .attr("class", "grid x-grid")
+    .append("line")
+    .attr("x1", xrange[0])
+    .attr("x2", xrange[0])
+    .attr("y1", yrange[0])
+    .attr("y2", yrange[1]);
+
+  d3.selectAll(".scatter.graph")
+    .append("g")
+    .attr("class", "grid y-grid")
+    .append("line")
+    .attr("x1", xrange[0])
+    .attr("x2", xrange[1])
+    .attr("y1", yrange[1])
+    .attr("y2", yrange[1]);
+
+    var width2 = 175
+    var height2 = 175
+
+  d3.select("#plot11")
+    .append("g")
+    .attr("class", "data")
+    .selectAll("circle")
+    .data(dataset)
+    .enter()
+    .append("circle")
+    .attr("r", "2.5px")
+    .attr("cx", function(d){return ""+xspringScale(d.Spring)+"px";})
+    .attr("cy", function(d){return ""+yspringScale(d.Spring)+"px";})
+    .attr("fill", function(d){return d3.interpolateBlues(colorScale(d.Year))})
+
+  // Setting label y axis, spring
+  d3.select('#plot11')
+    .append("text")
+    .style("fill", "white")
+    .attr("transform", "rotate(-90)")
+    .style('text-anchor', 'middle')
+    .attr('x', 0-(height2/2))
+    .attr('y', 20)
+    .text('Spring');
+
+  d3.select("#plot12")
+    .append("g")
+    .attr("class", "data")
+    .selectAll("circle")
+    .data(dataset)
+    .enter()
+    .append("circle")
+    .attr("r", "2.5px")
+    .attr("cx", function(d){return ""+xsummerScale(d.Summer)+"px";})
+    .attr("cy", function(d){return ""+yspringScale(d.Spring)+"px";})
+    .attr("fill", function(d){return d3.interpolateBlues(colorScale(d.Year))})
+
+  d3.select("#plot13")
+    .append("g")
+    .attr("class", "data")
+    .selectAll("circle")
+    .data(dataset)
+    .enter()
+    .append("circle")
+    .attr("r", "2.5px")
+    .attr("cx", function(d){return ""+xfallScale(d.Fall)+"px";})
+    .attr("cy", function(d){return ""+yspringScale(d.Spring)+"px";})
+    .attr("fill", function(d){return d3.interpolateBlues(colorScale(d.Year))})
+
+  d3.select("#plot14")
+    .append("g")
+    .attr("class", "data")
+    .selectAll("circle")
+    .data(dataset)
+    .enter()
+    .append("circle")
+    .attr("r", "2.5px")
+    .attr("cx", function(d){return ""+xwinterScale(d.Winter)+"px";})
+    .attr("cy", function(d){return ""+yspringScale(d.Spring)+"px";})
+    .attr("fill", function(d){return d3.interpolateBlues(colorScale(d.Year))})
+
+  d3.select("#plot21")
+    .append("g")
+    .attr("class", "data")
+    .selectAll("circle")
+    .data(dataset)
+    .enter()
+    .append("circle")
+    .attr("r", "2.5px")
+    .attr("cx", function(d){return ""+xspringScale(d.Spring)+"px";})
+    .attr("cy", function(d){return ""+ysummerScale(d.Summer)+"px";})
+    .attr("fill", function(d){return d3.interpolateBlues(colorScale(d.Year))})
+ 
+  // Setting label y axis, summer
+  d3.select('#plot21')
+    .append("text")
+    .style("fill", "white")
+    .attr("transform", "rotate(-90)")
+    .style('text-anchor', 'middle')
+    .attr('x', 0-(height2/2))
+    .attr('y', 20)
+    .text('Summer');
+
+  d3.select("#plot22")
+    .append("g")
+    .attr("class", "data")
+    .selectAll("circle")
+    .data(dataset)
+    .enter()
+    .append("circle")
+    .attr("r", "2.5px")
+    .attr("cx", function(d){return ""+xsummerScale(d.Summer)+"px";})
+    .attr("cy", function(d){return ""+ysummerScale(d.Summer)+"px";})
+    .attr("fill", function(d){return d3.interpolateBlues(colorScale(d.Year))})
+ 
+
+  d3.select("#plot23")
+    .append("g")
+    .attr("class", "data")
+    .selectAll("circle")
+    .data(dataset)
+    .enter()
+    .append("circle")
+    .attr("r", "2.5px")
+    .attr("cx", function(d){return ""+xfallScale(d.Fall)+"px";})
+    .attr("cy", function(d){return ""+ysummerScale(d.Summer)+"px";})
+    .attr("fill", function(d){return d3.interpolateBlues(colorScale(d.Year))})
+
+  d3.select("#plot24")
+    .append("g")
+    .attr("class", "data")
+    .selectAll("circle")
+    .data(dataset)
+    .enter()
+    .append("circle")
+    .attr("r", "2.5px")
+    .attr("cx", function(d){return ""+xwinterScale(d.Winter)+"px";})
+    .attr("cy", function(d){return ""+ysummerScale(d.Summer)+"px";})
+    .attr("fill", function(d){return d3.interpolateBlues(colorScale(d.Year))})
+
+
+  d3.select("#plot31")
+    .append("g")
+    .attr("class", "data")
+    .selectAll("circle")
+    .data(dataset)
+    .enter()
+    .append("circle")
+    .attr("r", "2.5px")
+    .attr("cx", function(d){return ""+xspringScale(d.Spring)+"px";})
+    .attr("cy", function(d){return ""+yfallScale(d.Fall)+"px";})
+    .attr("fill", function(d){return d3.interpolateBlues(colorScale(d.Year))})
+
+  // Setting label y axis, fall
+  d3.select('#plot31')
+    .append("text")
+    .style("fill", "white")
+    .attr("transform", "rotate(-90)")
+    .style('text-anchor', 'middle')
+    .attr('x', 0-(height2/2))
+    .attr('y', 20)
+    .text('Fall');
+
+  d3.select("#plot32")
+    .append("g")
+    .attr("class", "data")
+    .selectAll("circle")
+    .data(dataset)
+    .enter()
+    .append("circle")
+    .attr("r", "2.5px")
+    .attr("cx", function(d){return ""+xsummerScale(d.Summer)+"px";})
+    .attr("cy", function(d){return ""+yfallScale(d.Fall)+"px";})
+    .attr("fill", function(d){return d3.interpolateBlues(colorScale(d.Year))})
+
+
+  d3.select("#plot33")
+    .append("g")
+    .attr("class", "data")
+    .selectAll("circle")
+    .data(dataset)
+    .enter()
+    .append("circle")
+    .attr("r", "2.5px")
+    .attr("cx", function(d){return ""+xfallScale(d.Fall)+"px";})
+    .attr("cy", function(d){return ""+yfallScale(d.Fall)+"px";})
+    .attr("fill", function(d){return d3.interpolateBlues(colorScale(d.Year))})
+
+
+  d3.select("#plot34")
+    .append("g")
+    .attr("class", "data")
+    .selectAll("circle")
+    .data(dataset)
+    .enter()
+    .append("circle")
+    .attr("r", "2.5px")
+    .attr("cx", function(d){return ""+xwinterScale(d.Winter)+"px";})
+    .attr("cy", function(d){return ""+yfallScale(d.Fall)+"px";})
+    .attr("fill", function(d){return d3.interpolateBlues(colorScale(d.Year))})
+
+
+  d3.select("#plot41")
+    .append("g")
+    .attr("class", "data")
+    .selectAll("circle")
+    .data(dataset)
+    .enter()
+    .append("circle")
+    .attr("r", "2.5px")
+    .attr("cx", function(d){return ""+xspringScale(d.Spring)+"px";})
+    .attr("cy", function(d){return ""+ywinterScale(d.Winter)+"px";})
+    .attr("fill", function(d){return d3.interpolateBlues(colorScale(d.Year))})
+
+  // Setting label y axis, winter
+  d3.select('#plot41')
+    .append("text")
+    .style("fill", "white")
+    .attr("transform", "rotate(-90)")
+    .style('text-anchor', 'middle')
+    .attr('x', 0-(height2/2))
+    .attr('y', 20)
+    .text('Winter');
+    
+
+  // Setting horizontal label, spring
+  d3.select('#plot41')
+      .append('text')
+      .style("fill", "white")
+      .style("text-anchor", "middle")
+      .attr("x", height2/2)
+      .attr("y", width2-10)
+      .text("Spring");
+
+  d3.select("#plot42")
+    .append("g")
+    .attr("class", "data")
+    .selectAll("circle")
+    .data(dataset)
+    .enter()
+    .append("circle")
+    .attr("r", "2.5px")
+    .attr("cx", function(d){return ""+xsummerScale(d.Summer)+"px";})
+    .attr("cy", function(d){return ""+ywinterScale(d.Winter)+"px";})
+    .attr("fill", function(d){return d3.interpolateBlues(colorScale(d.Year))})
+
+  // Setting horizontal label, summer
+  d3.select('#plot42')
+      .append('text')
+      .style("fill", "white")
+      .style("text-anchor", "middle")
+      .attr("x", height2/2)
+      .attr("y", width2-10)
+      .text("Summer");
+
+  d3.select("#plot43")
+    .append("g")
+    .attr("class", "data")
+    .selectAll("circle")
+    .data(dataset)
+    .enter()
+    .append("circle")
+    .attr("r", "2.5px")
+    .attr("cx", function(d){return ""+xfallScale(d.Fall)+"px";})
+    .attr("cy", function(d){return ""+ywinterScale(d.Winter)+"px";})
+    .attr("fill", function(d){return d3.interpolateBlues(colorScale(d.Year))})
+
+    // Setting horizontal label, Fall
+    d3.select('#plot43')
+      .append('text')
+      .style("fill", "white")
+      .style("text-anchor", "middle")
+      .attr("x", height2/2)
+      .attr("y", width2-10)
+      .text("Fall");
+
+  d3.select("#plot44")
+    .append("g")
+    .attr("class", "data")
+    .selectAll("circle")
+    .data(dataset)
+    .enter()
+    .append("circle")
+    .attr("r", "2.5px")
+    .attr("cx", function(d){return ""+xwinterScale(d.Winter)+"px";})
+    .attr("cy", function(d){return ""+ywinterScale(d.Winter)+"px";})
+    .attr("fill", function(d){return d3.interpolateBlues(colorScale(d.Year))})
+
+    // Setting horizontal label, winter
+    d3.select('#plot44')
+      .append('text')
+      .style("fill", "white")
+      .style("text-anchor", "middle")
+      .attr("x", height2/2)
+      .attr("y", width2-10)
+      .text("Winter");
+
+  });
+}
+
+
+  </script>
+
+  <style>
+
+body {
+      padding-top: 5%;
+      padding-left:15%;
+      padding-right:15%;
+      padding-bottom:5%;
+
+}
+
+div{
+  
+
+}
+.graph .labels.x-labels {
+  text-anchor: middle;
+}
+
+.graph .labels.y-labels {
+  text-anchor: end;
+}
+
+.row { 
+  margin-top:0px !important;
+  margin-bottom:0px !important;
+  margin-left:0px !important;
+  vertical-align: middle;
+}
+
+.scatter.graph {
+  height: 175px;
+  width: 175px;
+  margin-top:0px !important;
+  margin-bottom:-20px !important;
+  margin-left:0px !important;
+  margin-right:0px !important;
+
+}
+
+.line.graph {
+  height: 500px;
+  width: 900px;
+  margin-top:0px !important;
+  margin-bottom:-20px !important;
+  margin-left:0px !important;
+  margin-right:0px !important;
+
+}
+.span2 {
+
+margin-left:0px !important;
+
+}
+.graph .grid {
+  stroke: #ccc;
+  stroke-dasharray: 0;
+  stroke-width: 1;
+}
+
+.labels {
+  font-size: 13px;
+}
+
+.label-title {
+  font-weight: bold;
+  text-transform: uppercase;
+  font-size: 12px;
+  fill: black;
+}
+#scale{
+  margin-top: 20px;
+  margin-left: 60px;
+}
+.axis path,
+.axis line {
+    fill: none;
+    stroke: white;
+    shape-rendering: crispEdges;
+}
+
+.axis text {
+    font-family: sans-serif;
+    font-size: 11px;
+}
+.legend {
+  fill:#1a1a1a;
+}
+
+.legend text{
+  fill:white;
+
+}
+
+
+.hero-unit.scatter{
+  padding: -10px; /* default is 60px; */
+  background-color: #1a1a1a;
+  margin-right: 0%;
+
+}
+
+.hero-unit.indi{
+  padding: 15px; /* default is 60px; */
+  padding-left: 30px; /* default is 60px; */
+  margin-right: 0%;
+  margin-top: 5%;
+  margin-left:0px;
+
+}
+
+p{
+  margin-left:30px;
+  margin-right:30px;
+  text-align: justify;
+}
+
+h3{
+
+  margin-left: 20px;
+
+}
+
+h4{
+
+  text-align: center;
+}
+
+  </style>
+
+
+</head>
+
+
+
+
+<body>
+  <div class="container-fluid">
+  <div class="hero-unit">
+  <div>
+  <h1>Interactive Data Exploration </br> <small>How Has the Weather Changed Over the Past 100 Years?</small></h1>
+  </div>
+  <div section="WeatherData">
+  </div>
+  </div>
+
+<div>
+      <h3>Motivation</h3>
+      <p>Our motivation for making our visualizations was that we wanted to look at how the temperatures have changed over time. From our general knowledge about global temperature changes, we expected to find an overall increase in temperature over the last decade.
+      </p>
+      <p>
+      Our initial approach was to visualize the temperatues as a function of time. We did not want to plot a single line showing the grand average temperature for each year as this might give a misleading representation of our data as a result of filtering out e.g., temperature extremes in different seasons. Instead, we decided to plot the average temperatures for each season over time, hoping that we would be able to see an overall temperature increase, especially in the summer and winter temperatures (as these should have the most extreme temperature values).
+      For our second visualization, we wanted to dive deeper into our data in the hopes of discovering possible correlations between the seasons as a function of time.
+      </p>
+      <p>
+      As we have both grown up in Copenhagen, we decided to work with a <a href="http://data.giss.nasa.gov/cgi-bin/gistemp/show_station.cgi?id=612061860000&dt=1&ds=14">dataset</a> of the temperatures in Copenhagen from 1880-2015. Therefore, the timeframe we’re looking at spans 135 years.</p>
+    </div>
+</div>
+
+
+<div>
+  <h4> Line Plot: </br> Average season temperatures from 1880-2015 (Copenhagen)</h4>
+
+ <div class="container-fluid">
+  <div class="hero-unit scatter"> 
+  <div section="LinePlot" class="line">
+    <div class="row">
+
+        <svg id="plot1" class="graph line"> </svg>
+
+    <div class="row">
+  </div>
+</div>
+</div>
+</div>
+
+<div>
+      <h3>Method</h3>
+      <p>For the visualization of temperature changes over time we did a line plot using one categorical channel (season) and two quantitative (year and average temperature). We chose to distinguish the different seasons using a diverging color scheme with range red-yellow-blue. We chose this color scheme as we believe that humans associate hot temperatures (or in our case seasons) with reddish hues and cold temperatures with blueish hues. The average temperature for the season in question decided the color value. We decided to visualize the data using a line plot in order to make it easy to see the relationship between our quantitative channels and hereby creating a common reference point for our categorial channels. Furthermore, we believe that people are used to see data visualized using line plots, and so making this type of visualization seemed like a good starting point for further data exploration.
+      </p>
+      <p>
+      We also decided to show the plot on a dark grey background in order to highlight the effects of the color channels (the lighter colors of the spring and fall lines in the middle of the plot stand out more on a dark background compared to a light one).</p>
+
+      <h3>Results/Discussion</h3>
+      <p>The problem with our visualization is that it draws the audience’s attention to the local minima and maxima in the seasons instead of giving an overall view of the temperature changes. Further, it is not clear from the plot whether there is an overall change in temperature over time or not. This is the reason why we decided to explore the relationships between the local minimum and maximum values of the dataset. Is there a general correlation between high temperature extremes in the different seasons over time?</p>
+    </br>
+</div>
+
+  
+
+<div>
+<h4> Scatter Plot Matrix: </br> Correlations between average season temperatures from 1880-2015 (Copenhagen)</h4>
+ <div class="container-fluid">
+  <div class="hero-unit scatter"> 
+
+  <div section="ScatterPlot" class="scatter">
+
+    <div class="row row-bottom-margin">
+
+      <div class="span2">
+        <svg id="plot11" class="graph scatter"> </svg>
+      </div>
+      <div class="span2">
+        <svg id="plot12" class="graph scatter"> </svg>
+      </div>      
+      <div class="span2">
+        <svg id="plot13" class="graph scatter"> </svg>
+      </div>      
+      <div class="span2">
+        <svg id="plot14" class="graph scatter"> </svg>
+      </div>
+         <div class="span1">
+      <img src="4u.png" id="scale" title="Colorscale", height="50", width="50">
+    </div>
+    </br>
+
+    </div>
+    <div class="row row-bottom-margin">
+      <div class="span2">
+        <svg id="plot21" class="graph scatter"> </svg>
+      </div>
+      <div class="span2">
+        <svg id="plot22" class="graph scatter"> </svg>
+      </div>      
+      <div class="span2">
+        <svg id="plot23" class="graph scatter"> </svg>
+      </div>      
+      <div class="span2">
+        <svg id="plot24" class="graph scatter"> </svg>
+      </div>
+   
+    </div>  
+    
+    <div class="row row-bottom-margin">
+    <div class="span2">
+        <svg id="plot31" class="graph scatter"> </svg>
+      </div>
+      <div class="span2">
+        <svg id="plot32" class="graph scatter"> </svg>
+      </div>      
+      <div class="span2">
+        <svg id="plot33" class="graph scatter"> </svg>
+      </div>      
+      <div class="span2">
+        <svg id="plot34" class="graph scatter"> </svg>
+      </div>
+    </div>    
+    
+    <div class="row row-bottom-margin">
+      <div class="span2">
+        <svg id="plot41" class="graph scatter"> </svg>
+      </div>
+      <div class="span2">
+        <svg id="plot42" class="graph scatter"> </svg>
+      </div>      
+      <div class="span2">
+        <svg id="plot43" class="graph scatter"> </svg>
+      </div>      
+      <div class="span2">
+        <svg id="plot44" class="graph scatter"> </svg>
+      </div>
+    </div>    
+    </div>    
+    </div>
+  </div>
+
+<div>
+      <h3>Method</h3>
+      <p>In this visualization we wanted to show the correlation between minimum and maximum temperatures in the dataset in the different seasons. Therefore, we decided to normalize the data and use parallel axes where the low axis values are the minimum temperatures observed in the dataset and maximum axis values are the maximum temperatures. We scattered our datapoints along these axes, differentiating year values using a sequential single hue blue color scheme. Thus, we were able to compare the older datapoints to the newly observed ones.</p>
+
+
+      <h3>Results/Discussion</h3>
+      <p>From the scatterplot matrix we are able to see a tendency for the upper right corner in the plots to contain points of a darker blue hue. This indicates that we in recent years have observed more warm extremes compared to what was observed in older data points. Comparing that result to the lower left corner, we see a more mixed representation of the different hues. This suggests that we still observe colder extremes.
+      Using the different hue values makes it difficult to distinguish between values situated in the middle of the color scale. Thus, this visualization shows overall tendencies rather well, but it is not well suited for exploring individual differences between the data points.</p>
+</div>
+
+  </div>
+
+  <div class="container-fluid">
+  <div class="hero-unit indi">
+    <h2>Individual Parts</h2>
+  </div>
+  </div>
+  <div>
+
+    <div>
+      <h3>Question 1 <small> Sidsel </small></h3>
+      <p>Data obtained from only one place can be unrepresentative for the general temperature changes and be subject to individual changes. Therefore, in order to give a more confident answer to the question ‘how has the weather changed over the past 100 years’ it could be an idea to average over more than just the data from just one city. This would give you a more general idea of the overall tendency and in the end you would perhaps show less noisy data.
+      </p>
+      <p>
+      Furthermore, the averages in our report are a bit misleading, as they are 24 hour temperature averages. This means that the average includes both day temperatures and night temperatures. Using a data set consisting of temperatures measured over a few hours each day (capturing less variance) would probably be more comparable.
+      </p>
+    </div>
+
+    <div>
+      <h3>Question 2<small> Mai-Britt </small></h3>
+
+      <p>
+        In this assignment, we’ve only looked on temperature observations in Copenhagen. However, this does not necessarily give an overall indication of temperature change. In order to explore specific and more general changes in temperatures over time, it could be an idea to implement a visualization where the user is able to switch between area coverage sizes. In this way, the user would be able to compare the temperature changes in Copenhagen to the ones in Scandinavia etc.
+      </p>
+      <p>
+        Also, in line with Sidsels comment on day and night temperatures, it could be helpful for the user to toggle these categories on and off.
+      </p>  
+    </div>
+
+  </div>
+
+
+  </div> 
+</body>
+</html>
