@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width">
+  <title>Project 3</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/2.3.2/css/bootstrap.min.css"/>
+  <script src="https://d3js.org/d3.v4.min.js"></script>
+  <script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
+
+  <script>
+
+      var fpath = "GermanicExt.csv"
+        
+      d3.select(window).on("load", maketree(fpath));
+
+      function maketree(data){
+
+      var width = 1000,
+          height = 1000;
+
+
+      d3.csv(fpath, function(error, data) {
+
+          var dataMap = data.reduce(function(map, node) {
+            map[node.name] = node;
+            return map;
+            }, {});
+
+            console.log(dataMap)
+
+        var treeData = [];
+        data.forEach(function(node) {
+          var parent = dataMap[node.parent];
+          if (parent) {
+            (parent.children || (parent.children = []))
+              .push(node);
+          } else {
+            treeData.push(node);
+          }
+        });
+
+          root = treeData[0];
+
+      var basis = d3.select('#TreeVisualization').append('svg')
+                  .attr('width', width*1.04)
+                  .attr('height', height*1.2)
+                  .append('g')
+                    .attr('transform', 'translate(80,0)');
+
+      var tree = d3.cluster()
+                .size([width+200, height-200]);
+
+      var nodes = d3.hierarchy(root),
+          nodes = tree(nodes)
+          edges = nodes.descendants().slice(1);
+
+      // setting a scale for the node circle size
+      var minRadius = 2,
+          maxRadius = 20
+
+      var nodeScale = d3.scaleLinear()
+            .range([minRadius,maxRadius])
+            .domain([1,100]);
+
+      // setting the edge
+      function diagonal(d) {
+        return "M" + d.y + "," + d.x
+            + "C" + (d.y + d.parent.y) / 2 + "," + d.x
+            + " " + (d.y + d.parent.y) / 2 + "," + d.x
+            + " " + d.parent.y + "," + d.parent.x;
+      };
+
+      //checking what family the nodes belong to
+      function check_family(d) {
+        for (m in d.ancestors()){
+          if (d.ancestors()[m].data.name == 'East Germanic'){
+            return "East Germanic";}
+          if (d.ancestors()[m].data.name == 'West Germanic'){
+            return 'West Germanic';}
+          if (d.ancestors()[m].data.name == 'North Germanic'){
+            return 'North Germanic';}
+        }
+      };
+
+      //checking if the nodes are distinct
+      function check_ext(d) {
+          for (m in d.ancestors()){
+          if (d.ancestors()[m].data.extinct){
+            return "yes";}}
+          return 'no';
+        };
+
+      // add a color scale for the three big language families
+      var familyColor = d3.scaleOrdinal(d3.schemeSet1)
+                        .domain(['East Germanic', 'West Germanic', 'North Germanic']);
+
+      // add edges to the graph
+      basis.selectAll('.edge')
+            .data(edges)
+            .enter()
+            .append('path')
+            .attr('class', 'edge')
+            .attr('d', function(d) {return diagonal(d);})
+            .attr('stroke', function(d) {return familyColor(check_family(d));})
+            .style('stroke-linecap', function(d){if (check_ext(d) == 'yes') return 'square';})
+            .style('stroke-dasharray', function(d) {if (check_ext(d) == 'yes') return '1, 4';});
+
+      var node = basis.selectAll('.node')
+                 .data(nodes.descendants())
+                 .enter()
+                 .append('g')
+                    .attr('class', 'node')
+                    .attr('transform', function(d) {return 'translate(' + d.y + ',' + d.x + ')';});
+
+      // add a scale for the text font size
+      var minFontSize = 14,
+          maxFontSize = 18;
+
+      var txtScale = d3.scaleLinear()
+            .range([minFontSize,maxFontSize])
+            .domain([1,100]);
+
+      // add a scale for the size of the text relative to the radius of the node circle
+      var txtRelRad = d3.scaleLinear()
+            .range([-10 ,-35])
+            .domain([minRadius, maxRadius])
+
+      // add text to nodes
+      node.append('text')
+          .text(function(d) {return d.data.name; })
+          .attr('text-anchor', function(d) {if (d.descendants().length > 1) return 'middle'; else return 'start';})
+          .attr('x', function(d) {if (d.descendants().length = 1) return 5;})
+          .attr('dy', function(d) {if (d.descendants().length = 1) return '.30em';})
+          .style('font-size', function(d) {if (d.descendants().length > 1) return txtScale(d.descendants().length);})
+          .attr('y', function(d) {if (d.descendants().length > 1) return txtRelRad(nodeScale(d.descendants().length));});
+
+      var purpleScale = d3.scaleLinear()
+                        .domain([-50,20])
+                        .range([0,1]);
+
+      // add circles to nodes
+      node.append('circle')
+          .attr('r', function(d) {if (d.descendants().length > 1) return nodeScale(d.descendants().length); else return nodeScale(minRadius);})
+          .attr('fill', function(d) {return d3.interpolateBuPu(purpleScale(d.descendants().length));})
+          .attr('stroke', function(d) {return d3.interpolateBuPu(purpleScale(d.descendants().length));});
+
+      // Add legend
+      var legend = basis.append('g');
+
+      var line_length = 35;
+      var line = [[0, line_length], [0, 0]];
+      var s_width = 5;
+      var space = s_width+15;
+      var space2 = 3;
+      var textmargin = 8;
+
+
+      var label = "North Germanic"
+      var north = legend.append("g")
+                        .attr("class", "node")
+                        .attr('transform', 'translate(0,'+(s_width+space)+')');
+
+      north.append('line')
+            .attr("stroke", familyColor(label))
+            .attr("stroke-width", s_width)
+            .attr("x1", line[0][0])
+            .attr("x2", line[0][1])
+            .attr("y1", line[1][0])
+            .attr("y2", line[1][1]);
+
+      north.append("text")
+           .text(label)
+           .attr("text-anchor", "start")
+           .attr('transform', 'translate('+(line_length+space2+textmargin)+','+space2+')');
+            
+      var label = "West Germanic"
+      var west = legend.append("g")
+                        .attr("class", "node")
+                        .attr('transform', 'translate(0,'+(s_width+space*2)+')');
+
+      west.append('line')
+            .attr("stroke", familyColor(label))
+            .attr("stroke-width", s_width)
+            .attr("x1", line[0][0])
+            .attr("x2", line[0][1])
+            .attr("y1", line[1][0])
+            .attr("y2", line[1][1]);
+
+      west.append("text")
+           .text(label)
+           .attr("text-anchor", "start")
+           .attr('transform', 'translate('+(line_length+space2+textmargin)+','+space2+')');
+
+      var label = "East Germanic"
+      var east = legend.append("g")
+                        .attr("class", "node")
+                        .attr('transform', 'translate(0,'+(s_width+space*3)+')');
+
+      east.append('line')
+            .attr("stroke", familyColor(label))
+            .attr("stroke-width", s_width)
+            .attr("x1", line[0][0])
+            .attr("x2", line[0][1])
+            .attr("y1", line[1][0])
+            .attr("y2", line[1][1]);
+
+      east.append("text")
+           .text(label)
+           .attr("text-anchor", "start")
+           .attr('transform', 'translate('+(line_length+space2+textmargin)+','+space2+')');
+
+      var label = "Extinct"
+      var extinct = legend.append("g")
+                        .attr("class", "node")
+                        .attr('transform', 'translate(0,'+(s_width+space*4)+')');
+
+      extinct.append('line')
+            .attr("stroke", "lightgray")
+            .attr("stroke-width", s_width)
+            .style("stroke-linecap", "square")
+            .style("stroke-dasharray", "1, 10")
+            .attr("x1", line[0][0])
+            .attr("x2", line[0][1])
+            .attr("y1", line[1][0])
+            .attr("y2", line[1][1])
+
+      extinct.append("text")
+           .text(label)
+           .attr("text-anchor", "start")
+           .attr('transform', 'translate('+(line_length+space2+textmargin)+','+space2+')');
+
+      var legend_rad = 6;
+      var resize = 1.8;
+      var label = "Branch size (big ~ small)"
+      var branchsize = legend.append("g")
+                        .attr("class", "node")
+                        .attr('transform', 'translate(0,'+(s_width+space*5)+')');
+
+      branchsize.append('circle')
+            .attr("r", legend_rad)
+            .attr('fill', function(d) {return d3.interpolateBuPu(purpleScale(legend_rad));})
+            .attr('transform', 'translate('+(legend_rad+25)+','+(legend_rad*resize-4)+')');
+
+      branchsize.append('circle')
+            .attr("r", legend_rad*resize)
+            .attr('fill', function(d) {return d3.interpolateBuPu(purpleScale(legend_rad*resize));})
+            .attr('transform', 'translate(6,'+(legend_rad)+')');
+
+      branchsize.append("text")
+           .text(label)
+           .attr("text-anchor", "start")
+           .attr('transform', 'translate('+(line_length+space2+textmargin)+','+(space2+legend_rad)+')');
+
+
+      })}
+
+  </script>
+
+
+  <style>
+    .node circle {
+      stroke-width: 3px;
+
+    }
+
+    .node text {
+      color: black;
+      text-anchor: right;
+      fill-opacity: 1;
+      font: 12px sans-serif;
+
+    }
+
+    .edge {
+      fill: none;
+      /* stroke: grey;
+      */stroke-width: 2px;
+
+    }
+      body {
+            padding-top: 5%;
+            padding-left:7%;
+            padding-right:7%;
+            padding-bottom:5%;
+      }
+
+      div{
+
+      }
+
+      .row { 
+        margin-top:0px !important;
+        margin-bottom:0px !important;
+        margin-left:0px !important;
+        vertical-align: middle;
+      }
+
+      .span2 {
+      margin-left:-20px !important;
+      margin-bottom:-20px
+      }
+      .hero-unit{
+
+        margin-bottom: 0px;
+      }
+
+      .hero-unit.title{
+        padding: 15px; /* default is 60px; */
+        padding-left: 30px; /* default is 60px; */
+        margin-right: 0%;
+        margin-top: 5%;
+        margin-left:0px;
+
+
+      }
+
+      p, h4, h2{
+        margin-left:80px;
+        margin-right:80px;        
+        text-align: justify;
+      }
+
+      h2{
+        margin-top: 50px;
+
+      }
+
+      h2, h3{
+
+        margin-left: 70px;
+
+      }
+      h5 {
+
+        text-align: center;
+
+      }
+
+
+
+      #TreeVisualization{
+
+        margin-right: 0%;
+        margin-top: 0%;
+        margin-left:-50px;
+
+      }
+
+
+  </style>
+
+
+</head>
+
+<body>
+  <div class="container-fluid">
+    <div class="hero-unit">
+    
+      <div>
+        <h1>Interactive Data Exploration </br> <small>Networks &amp; Trees</small></h1>
+      </div>
+
+    </div>
+  </div>
+
+
+  <div section="review">
+    <div>
+          <h2>Part I: <small>Review: Write down one thing that could be improved and one thing that was done well for assignment 2.</small></h2>
+          <h4><a href="https://graveheart.github.io/IDEProject/">Project 12</a> </h4>
+          <p>
+            The one thing that worked well for the Project 12 at was its execution. It's a really well designed page that has modern day aesthetical qualities that one would expect to find in contemporary blogs or personal web pages. The use of space and color play a significant role in how the information is read on the page, which is commendable. The gaze naturally goes from the title in the top right down to the download buttons and then to the content of the page. Visualizations that are able to direct attention in this way are user friendly since they allow for the information on the page to be discernable near instantaneously.<br></br>
+
+            The one thing that could be improved, however, is the distribution of the text throughout the page. A cursory view of the information reveals certain parts of the text as being clustered, especially in the motivation paragraph. The clustering of text into a tight area makes the information difficult to dissect visually, which makes it more difficult to read over. The ideal situation would be to find a distribution of text throughout the page that allows for the optimal flow of information visually.<br></br>
+
+            While optimal user flow was approached very well in this assignment, a special consideration to the distribution of the textual information on the page could contribute towards improving the flow of information. 
+
+          </p>
+          <h4><a href="https://cservenka.github.io/IDE/project2/ ">Project 10</a> </h4>
+          <p>
+            The one thing that worked well for Project 10 was its use of space. There seems to be a design choice that was made to create distinct backgrounds for each image and for each block of text. This design choice makes it easy for a user to glance over information quickly, which improves users recognition and optimizes the flow of information. Moreover, there was also a choice made to leave a title bar frozen at the top of the page, even when you scroll down. Although its a small touch, it works well at communicating that the information is about weather pattern data, consistently. It’s a small detail that effectively reminds a user about what the webpage is about. This and the distribution of text thought the webpage are some of the things that worked very well in this assignment. <br></br>
+
+            The one thing that could be taken under consideration in this assignment would be the use of color. The predominant color scheme relies on some grayscales tones that neither adds nor detracts from the information being conveyed on the page. Color could, however, be used for reinforcing engagement of a user by coating the content with colors readily associated with weather. In doing so, you would be using color as a channel to reinforce the semantic associations of the data you are presenting. This suggestion could provide a possible contribution towards overall user experience.
+
+          </p>        
+
+    </div>
+  </div>
+
+  <div section="tree">
+    <div>
+          <h2>Part II: <small>Network/Tree Data</small></h2>
+          <h4>Motivation</h4>
+          <p>
+            The following tree graph is a visualization of Germanic language data that was scrapped off of wikipedia: <a href="https://en.wikipedia.org/wiki/Germanic_languages">Germanic Languages</a>.Due to the fact that the majority of us have a background in linguistics, it seemed straightforward to us to choose a dataset that was related to linguistics. Furthermore, datasets like these encode how their entities are related to each other, making them very suitable for this task (visualizing relationships). They also give rise to many different visualization opportunities. For example, you can focus on specific branches, show their similarities or dissimilarities, visually encode if certain branches are extinct or not etc.
+          </p>
+          <p>
+            For our visualization, we decided to visualize one language family, focusing on the relationship between its three main branches and, on a more general level, how the different languages relate to each other.
+          </p>
+
+          </p>
+          <h4>Description of data</h4>
+          <p>
+          The data was stored in a csv file which contains hierarchical data about the historical development of Germanic languages. The root node in the tree is Germanic Languages and each level in the subsequent branches denotes a unique path of development in the language i.e. the root node expands into East Germanic, North Germanic, and West Germanic languages. <br></br>
+
+          For example, if you would like to trace the history of the German language, you could use the data to produce the following path from root to leaf node: Germanic Languages &#8594; West Germanic &#8594; High Germanic languages &#8594; German. This type of information is easily discernable in our visualization, which uses a basic outline view scheme to arrange and present the data visually. This type of layout allows the user the flexibility to simply glance over the original data and easily distinguish between different branches of development for comparison. There was also a choice to align all of the leaf nodes up against the right margin of the image. This decision was taken as an added measure to ensure that the data would be legible by aligning most of the nodes in the graph onto a single axis. This decision avoids any unintentional and potentially distracting clustering by favoring the visualization of branches and clusters onto the left hand side and the leaf nodes onto the righthand side of the image. Functionally, this is how are dataset is presented and visualized.           
+          </p>      
+
+          <h4>Visualization</h4>
+          <p>
+           Beyond functionality, we have chosen to alter some aesthetic properties in our visualization to further encode meaning and reinforce optimal user flow. One of the more obvious features of this visualization are all the edges that connect the nodes in the graph. Two channels that have been specifically altered to further encode categorical meaning in the edges of the graph are color hue and line shape. <br></br>
+
+
+           In our visualization we use red, green, and blue to seperate the regional branches in the graph. The colors chosen fall in line with a simple RGB palette, which in this case, works well to demarcate and segment the regional branches visually. East Germanic languages are red, North Germanic languages are green, and West germanic languages are blue. The colors in this example are used as a visual cue to reinforce categorical distinction between the data, which in this case is region. <br></br>
+
+
+           Aside from color, we have also altered the shape of the edges to indicate whether or not a particular pathway is active or extinct. An uninterrupted line indicates that the language variant is active, whilst a dotted edge indicates that the child node of a particular parent node is extinct. To illustrate this, take a look at the West Germanic language node which expands into Anglo-Frisian languages. If you look at the Elderstedt Frisian leaf node, under Frisian languages, you can observe that the edge between the parent and the leaf node is a dotted line. In this case, a user could understand that Elderstedt Frisian is a dialect of Frisian languages that has gone extinct. The relevance of this channel is prominently observed in the East Germanic branch where a user is cued to understand that the entire branch has gone extinct. A simple manipulation of shape goes a long way here in communicating an important attribute of the original data, namely whether a language variant is alive or dead. <br></br>
+
+          Aside from edges, the only other channel that was purposely manipulated was the size of the nodes which convey magnitude. In our graph, a node's area is directly related to the number of descendants accessible through that node. A node with a large area would indicate a greater number of descendants that proceed it, while a node with a smaller area would indicate a smaller number of descendants that proceed it. By choosing to do this, the attempt was to represent the idea of volume i.e. magnitude of each of the branches. This type of manipulation, for example, would allow a user to understand visually that western North Germanic languages have a fewer variant branches when compared to High German languages. The use of the node size as channel to encode ordinal attributes helps improve the overall expressiveness of the visualization.
+          </p>                
+
+          <h4>Interactive elements</h4>
+          <p>
+
+          There were four main interactive considerations that we thought could improve the visualization. <br> </br>
+
+          The first obvious one was to make the nodes in the graph expandable and collapsable. By allowing a user to access the visualization as an expandable root, you afford the user a degree of agency that allows them to explore the dataset on their own terms, instead of having the entire thing to appear all at once. This type of design choice could increase the expressiveness of the information being conveyed by relying on this interactive component to tunnel through the information. A similar option that works in conjunction with this idea is to have a button, somewhere that is visually accessible, which allows for either the fully expanded tree or the fully collapsed tree to be accessed by click. This of course, adds degrees of freedom that enable the user to explore the data in whatever way works best for them. This type of click event could also be used to filter data into or out of the visualization. By clicking a particular node in the visualization, for example, you could make the visualization only show relevant branches associated with the particular node, something that may come in handy when trying to visualize larger datasets.
+
+
+           The first obvious one was to make the nodes in the graph expandable and collapsable. By allowing a user to access the visualization as an expandable root, you afford the user a degree of agency that allows them to explore the dataset on their own terms, instead of having the entire thing to appear all at once. This type of design choice could increase the expressiveness of the information being conveyed by relying on this interactive component to tunnel through the information. A similar option that works in conjunction with this idea is to have a button, somewhere that is visually accessible, which allows for either the fully expanded tree or the fully collapsed tree to be accessed by click. This of course, adds degrees of freedom that enable the user to explore the data in whatever way works best for them. <br></br><!-- Also this woul allow you to use more dp? Setting a higher threshold for when thr visualuizayin is saturated-->
+
+           Moreover, a second interactive element we considered would be to add a highlighting factor across the edges that emphasizes the path from the root node to the node in question. For example, if we hovered over the English node, this interactive element would trace the depth of this node by visualizing the path from the root to the leaf. This path would appear as an accentuated line with a different color and a thicker length that runs from Germanic Languages &#8594; West Germanic &#8594; Anglo-Frisian languages &#8594; English. The line would only appear for the duration in which the node is clicked on or scrolled over. This interactive component is designed to allow users to index through different pathways in the graph more efficiently. <br></br> 
+
+           In our visualization we chose to weight the node size with respect to the number of descendents. An idea for another interactive feature would be to enable the user to change this weighting of the nodes to other features, depending on what one would like to visualize. An example is that nodes are weighted by the number of speakers of that particular branch: In the current visualization Anglo-Frisian is a small branch comparable to Swedish and Danish (i.e. they have the same number of descendants), but if we instead compare the number of speakers, the size of the node would increase dramatically since one of its descendants is the English language. To enable users to change view in this way would make them able to explore the individual branches in other ways than the default we have set up for them.
+
+           The last interactive element considered was to add a a link or a pop up box to the nodes that would then provide an example of a word or phrase across languages when accessed. For instance you could have a simple sentence like, "My name is John and I like cake," and by hovering over or clicking on the nodes, you would get access to how that sentence would be translated into these other languages.  
+
+
+          </p>                          
+    </div>
+
+    <h5>Tree Structure of the Germanic Language Family</h5>
+    <div class="container-fluid">
+      <div class="hero-unit">
+
+        <div id="TreeVisualization">
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>
