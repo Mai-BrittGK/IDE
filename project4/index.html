@@ -194,7 +194,7 @@ function containsKey(n, list, mode) {
                     .attr("id", "REMOVE")
                     .transition().duration(400)
                     .attr("stroke", '#FF5AF9')
-                    .attr("stroke-width", 2)
+                    .attr("stroke-width", 2.5)
                     .attr("opacity", "1")
                     .attr('fill', 'none')
 
@@ -276,20 +276,17 @@ function containsKey(n, list, mode) {
 
 
     d3.select('#reset')
-    .on('click', function(d){
-      d3.select("#handsplot")
+      .on('click', function(d){
+
+    var current_hands = [];
+
+    d3.select("#handsplot")
       .selectAll("path")
-    .remove()
+      .remove()
+      
 
     d3.selectAll('.selected')
-    .attr('class', '')
-
-
-
-    d3.selectAll('.tooltip')
-    .remove()
-
-      
+      .attr('class', '')
 
       })
 
@@ -335,7 +332,7 @@ function containsKey(n, list, mode) {
         float: none !important;
       }
 
-      p, h1, h2, h3, h4, h5, ul{
+      p, h1, h2, h3, h4, h5, h6, ul{
 
         max-width: 800px;
         margin: 0 auto !important;
@@ -388,7 +385,7 @@ function containsKey(n, list, mode) {
     <div class="hero-unit">
     
       <div>
-        <h1>Interactive Data Exploration </br> <small>Principal Component Analysis</small></h1>
+        <h1>Interactive Data Exploration </br> <small>Principal Component Analysis: Show of Hands</small></h1>
       </div>
 
     </div>
@@ -444,10 +441,34 @@ function containsKey(n, list, mode) {
 
 <h2>Discussion &amp; Conclusion</h2>
 
-
-
-
+<p>
+Comparing the points projected onto the first two PCs, we see that they are scattered most evenly along the first PC while they are more centered on the second PC.
+</p>
+<p>
+If we look at the points situated at the extremes of the first PC (for example point 30 and point 35), we find a big difference in the amount of space between the fingers. This indicates that the most variance in the dataset is captured with this feature.
+</p>
+<p>
+When we look at the points situated at the extremes of the second PC (for example point 39 and point 20), it is a bit less clear how the hands differ. However, the difference seems to be in how the hands are positioned vertically in the line plots. This indicates that vertical position is the feature that varies the second most in the dataset.
+</p>
+<p>
+In order to improve this visualization, it would be nice to add a feature that would be able to capture a different kind of similarity between the data points. For example, using kmeans clustering, we would be able to group the points together given a distance metric like Euclidean distance. In this way, we would automatically be able to analyze which points are similar in shape and which are not, using different colors for the different clusters and their corresponding hands.
+</p>
 
 </div>  
+
+
+<div section="Contributions">
+<h6>Contributions</h6>
+<p>
+<ul>
+  <li>Alex: Display of hand index on hover in the right panel.</li>
+  <li>Sidsel: Enable display of more than one hand at the time.</li>
+  <li>Mai-Britt: Hover and select visualizations in both panels.</li>
+</ul>
+</p>
+</div>  
+
+
+
   </body>
 </html>
