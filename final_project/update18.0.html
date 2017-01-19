@@ -1,0 +1,1022 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Visualization of Endangered Language</title>
+  	<script src="https://d3js.org/d3.v4.min.js" charset="utf-8"></script>
+  	<script src="https://d3js.org/topojson.v2.min.js"></script>
+  	<script src="https://d3js.org/d3-geo-projection.v1.min.js"></script>
+  	<script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
+  	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+	<meta name="viewport" content="width=device-width">
+    <style>
+
+    arrow {
+    	font-size: 8pt;
+    	cursor: default;
+    	opacity: 0.5;
+    }
+
+	rect.clicked {
+    	opacity: 0.4;
+    }
+
+    div{
+    	display: block;
+    	margin: auto;
+    	text-align: center;
+
+    }
+    .mapsvg {  	
+    	display: block;
+    	margin: auto;
+    	margin-bottom: 8px;
+    	margin-top: 8px;
+    }
+
+    arrow.selected {
+    	color: red;
+    	opacity: 1;
+    	font-size: 10pt;
+    }
+
+    #langtable tr.hovered {
+    	background: #ECD1D1;
+    }
+
+    #langtable tr.unhovered {
+    	background: #EEEEEE;
+    }
+
+    #langtable tr.clicked {
+    	background: #CBD1EA;
+    }
+
+    arrow.unselected {
+    	color:black;
+    }
+
+    circle[clickedCircle='True'] {
+		stroke: black;
+  		stroke-width: 2px;
+  		    }
+
+	circle[hoveredCircle='True'] {
+		stroke: blue;
+  		stroke-width: 2px;
+  		    }  		    
+
+	#langtable {
+	    border: 1.5px solid grey;
+	    width: 1000px;
+	    display: block;
+	    margin: auto;
+	    font-size: 14px;
+
+	}
+	#tableheader{
+	     display: block;
+	     font-size: 17px;
+	}
+	#tableheader tr {
+	     height: 30px;
+	     background: #BEBEBE; 
+	}
+	#tableheader tr th{
+	    border-right: 1px #C8C8C8;
+	    padding-left: 10px;
+	}
+
+	.tablescroll {
+	    display: block;
+	    /* height: 193px;*/
+	    height: 300px;
+	    overflow: auto;
+		
+	}
+	.tablescroll tr td{
+		height: 25px;
+	    border-bottom: 1px solid #CECECE; 
+	}
+	#tableheader th {
+	    width:250px;
+	}
+	.tablescroll td {
+		padding: 10px;
+	    width: 250px;
+	}
+
+      div{
+        padding-top: 2%;
+        max-width: 1080px;
+        text-align: left;
+
+      }
+     body{
+     	font-family: "Big Caslon";
+        max-width: 1080px;
+        margin: 0 auto !important;
+        float: none !important;
+      }
+
+      p, h1, h2, h3, h4, h5, h6, ul{
+
+        max-width: 1020px;
+        margin: 0 auto !important;
+        float: none !important;
+      }
+
+      h1 {
+
+      	text-align: center;
+      	font-size: 40pt;
+      	font-weight: normal;
+      	padding-top: 20px;
+      	font-weight: bold;
+      }
+
+      h3 {
+      	text-align: center;
+      	font-size: 20pt;
+      	padding-bottom: 5px;
+
+      }
+
+      .hero-unit{
+        max-width: 750px;
+        margin-bottom: 0px;
+        margin: 0 auto !important;
+        float: none !important;        
+      }
+
+      .hero-unit.title{
+        padding: 15px;
+      }
+
+      p, h4, h2{
+        padding-top: "10px";
+        text-align: justify;
+        padding-bottom: 5px;
+      }
+
+
+      p {
+      	padding-left: 30px;
+      	padding-right: 30px;
+      	font-size: 14px;
+      	line-height: 180%;
+      }
+
+      h5 {
+
+        text-align: center;
+
+      }
+
+      #footnote {
+      	text-align: right;
+      	padding-right: 40px;
+      	padding-bottom: 8px;
+      	padding-top: 30px;
+      	color: #1A1A1A;
+      }
+
+    </style>
+    <script>
+	
+	var fpath = ['root_all_languages.csv',  "iso_alpha_3_all.csv"]
+		
+		
+		d3.select(window).on("load", mapdata());
+		
+		function mapdata(){	
+			
+			/*~~~~~~ READ DATA  ~~~~~~*/
+			/* Read ISO-MAPPING*/
+			d3.csv(fpath[1],
+				
+				function(d) {return {
+								    iso_num : d['Numericalcode'],
+								    iso_alpha : d['ISOALPHA-3code'],
+									iso_lang : +d['languages_spoken']};},
+					
+				
+				function(isodata){
+
+
+			/* Read UNESCO */
+			d3.csv(fpath[0],
+
+				function(d) {return {
+					id : d['ID'],
+				    language_name : d['Name in English'],
+				    countries : d['Countries'],
+				    endangerment_degree : d['Degree of endangerment'],
+				    number_speakers : +d['Number of speakers'],
+				    latitude : +d['Latitude'],
+				    longitude : +d['Longitude'],
+				    description : d["Description"],
+				    Tag: d['Tag'],
+				    term : d['SearchTerm'],
+				    iso_alpha : d["Country codes alpha 3"].replace(/\s/g,'').split(','),};}, 
+				    
+
+				function(unescodata) {
+
+
+			/* Read POLYGON */
+            d3.json("https://raw.githubusercontent.com/d3/d3-geo/master/test/data/world-50m.json",
+            	
+            	function(error, polygondata) {
+
+      			if (error) throw error;
+
+				/*~~~~~~ FUNCTIONS  ~~~~~~*/
+				
+				function stringCompareDesc(a, b) {
+	    			a = a.toLowerCase();
+	    			b = b.toLowerCase();
+	    			return a > b ? 1 : a == b ? 0 : -1;};
+				
+				function stringCompareAsc(a, b) {
+	    			a = a.toLowerCase();
+	    			b = b.toLowerCase();
+	    			return a > b ? -1 : a == b ? 0 : 1;};
+
+	    		function numberCompareDesc(a, b) {
+	    			return a > b ? 1 : a == b ? 0 : -1;};
+
+	    		function numberCompareAsc(a, b) {
+	    			return a > b ? -1 : a == b ? 0 : 1;};
+
+	    		function extinct_Asc(a, b) {
+
+	    			if (a == 'Vulnerable'){a = 0;}
+	    			else if (a == 'Definitely endangered'){a=1;}
+	    			else if (a == 'Severely endangered'){a=2;}
+	    			else if (a == 'Critically endangered'){a=3;}
+	    			else{a=4;}
+
+	    			if (b == 'Vulnerable'){b = 0;}
+	    			else if (b == 'Definitely endangered'){b=1;}
+	    			else if (b == 'Severely endangered'){b=2;}
+	    			else if (b == 'Critically endangered'){b=3;}
+	    			else{b=4;}
+	    			
+	    			return a > b ? -1 : a == b ? 0 : 1;
+	    		};
+
+	    		function extinct_Dsc(a, b) {
+
+	    			if (a == 'Vulnerable'){a = 0;}
+	    			else if (a == 'Definitely endangered'){a=1;}
+	    			else if (a == 'Severely endangered'){a=2;}
+	    			else if (a == 'Critically endangered'){a=3;}
+	    			else{a=4;};
+
+	    			if (b == 'Vulnerable'){b = 0;}
+	    			else if (b == 'Definitely endangered'){b=1;}
+	    			else if (b == 'Severely endangered'){b=2;}
+	    			else if (b == 'Critically endangered'){b=3;}
+	    			else{b=4;};
+	    			
+	    			return a > b ? 1 : a == b ? 0 : -1;
+	    		};
+				
+				function sortcol(attrName, arrowid, metric) {
+
+					// Set color of arrow
+					d3.selectAll('arrow').attr('class', 'unselected');
+					d3.select('#'+arrowid).attr('class', 'selected');					
+					d3.select('#tabledata').selectAll('tr').sort(function (a, b) {return a == null || b == null ? 0 : metric(a[attrName], b[attrName]); })
+				};
+
+				function hoverpol(alphas, show, polydata, map, obj){
+
+					// Translate from ISO alphas to num
+					
+					var nums = alphas.map(function(d){
+								var match = isodata.filter(function(d2){return d2.iso_alpha == d})[0];
+								return match["iso_num"];});
+
+					selected = polydata.filter(function(d){return nums.indexOf(""+d.id)+1})
+
+					if (show=="show"){
+						
+						map.select("#selected")
+						   .selectAll("path")
+						   .data(selected, function(d) {return d.id})
+						   .enter()
+						   .append("path")
+					       .attr("d", path)
+					       .attr("fill", "#f78c8c")
+					       .style("opacity", 0.20)
+					       .attr("stroke", "#aaa")
+					       .exit()
+					       .remove();
+					   }
+
+					else if (show=="click") {
+						
+						// Remove hover effect
+						map.select("#selected").selectAll("path").remove()
+						
+						// Get current
+						var state   = obj.attr("class");
+						var current = map.select("#clicked").selectAll("path");
+
+						current.remove()
+						
+						if (state!="clicked"){
+						map.select("#clicked").selectAll("path")
+						       .data(selected, function(d) {return d.id})
+						       .enter()
+						       .append("path")
+						       .attr("d", path)
+						       .attr("fill", "#7F93E8")
+						       .style("opacity", 0.20)
+						       .attr("stroke", "#aaa")
+
+						}
+
+					}
+
+					else{
+						map.select("#selected").selectAll("path").remove();
+
+					}};
+				
+				/*~~~~~~ DRAW MAP  ~~~~~~*/
+
+				// Variables
+				var all_data = unescodata
+				var width = 1000
+				var height = 550
+				var polydata = topojson.feature(polygondata, polygondata.objects.countries).features;
+
+
+				// Projection
+				var projection = d3.geoModifiedStereographicMiller()
+                       .scale(width/1.2)
+                       .center([15, 55]);
+
+				var legendprojection = d3.geoModifiedStereographicMiller()
+                       .scale(100)
+                       .center([15, 55]);
+
+                var path = d3.geoPath()
+                 	   .projection(projection);
+
+				var pathlegend = d3.geoPath()
+                 	   .projection(legendprojection);
+
+      			// Define map
+      			var map = d3.select(".mapsvg")
+      				.attr('width', width)
+      				.attr('height', height)
+      				.select("#data");
+
+
+				// Adding the information table
+      			var wikitable = map.append("foreignObject")
+		  				.attr("width", 250)
+		  				.attr("height", 500)
+		  				.attr('id', 'tableholder')
+		  				.attr('transform', 'translate(740, 10)')
+
+		  				.append("xhtml:body")
+		  				
+		  				wikitable.append('table')
+
+		  				wikitable.append('thead').append('tr').append('td').attr('id', 'wikiheader')
+
+		  				wikitable.append('tbody').append('tr').append('td').style('padding-left', '8px').style('padding-right', '8px').style('padding-top', '8px').attr('id', 'wikirows')
+
+		  				d3.select('foreignObject')
+		  					.select('tbody')
+		  					.append('tr').append('td')
+		  					.style('padding', '8px')
+		  					.attr('id', 'wikiinfo')
+		  					.style('font-style', 'italic')
+
+		  				d3.select('#tableholder')
+		  				.attr('opacity', '0');
+
+
+      			// Draw country polygon
+      			var countries = map.select('#countries')
+      								.selectAll("path")
+									.data(polydata)
+			    				    .enter()
+							        .append("path")
+							        .attr("id", function(d,i){return "i"+d.id})
+							        .attr("d", path)
+							        .attr("fill", d3.interpolateGreys(0.1))
+							        .attr("stroke", "#aaa");
+				
+			    //Draw info
+			    var box = map.append("g")
+			      			.append("rect")
+			      			.attr("id", "info")
+			      			.attr("class", "show");
+
+  				// Draw points
+			    var circles = map.selectAll('circle')
+			       				 .data(all_data)
+			       				 .enter()
+			       				 .append('circle')
+			       				 .attr('clickedCircle', 'False')
+						         .attr('cx', function(d, i) {return projection([d['longitude'], d['latitude']])[0]})
+						         .attr('cy', function(d, i) {return projection([d['longitude'], d['latitude']])[1]})
+						         .attr('r', '3.5px')
+						         .attr('fill', 'red')
+						         .attr("opacity", "0.8")
+			       
+
+						       .on('mouseover', function(d, i) {
+						       			// Polygons
+						       			hoverpol(d.iso_alpha, "show", polydata, map, d3.select(this));
+						       			
+								       	d3.select(this).transition().duration(150).attr('hoveredCircle', 'True')
+								       	
+										d3.select('#tableholder')
+									       	 .transition().duration(300)
+									       	 .attr('opacity', '0.8')
+
+									       	 d3.select('#wikiheader')
+									       	 .text(d['language_name'])
+									       	 .style('text-align', 'center')
+									       	 .style('font-weight', 'bold')
+									       	 .style("font-size", "14px")							       	 
+
+									       	 d3.select('#wikirows')
+									       	 .text(d['description'])
+									       	 .style("font-size", "14px")
+
+									       	 d3.select('#wikiinfo')
+									       	 .text('Source: Wikipedia. Search term: ' + d['term'])
+									       	 .style('font-size', '14px')							       	 
+						       	
+						       	})
+
+						       .on('mouseout', function(d, i) {
+						       			// Polygons
+						       			hoverpol(d.iso_alpha, "hide", polydata, map, d3.select(this));
+						       			
+						       			d3.select(this).transition().duration(150).attr('hoveredCircle', 'False')
+
+
+										d3.select('#tableholder')
+								       	 .transition().duration(300)
+								       	 .attr('opacity', '0')									       	
+
+			   					})
+
+						       .on("click", function(d, i){
+
+
+						       		// Polygons
+				    				hoverpol(d.iso_alpha, "click", polydata, map, d3.select("#langtable").select("tr#"+d["Tag"].replace(/ /g, "_")))
+
+									// Table scroll
+				    				d3.select("#langtable").select("tr#"+d["Tag"].replace(/ /g, "_")).node().scrollIntoView({behavior:"smooth"})
+
+									// Set clicked-unclicked color in table
+				    				var tr_class = d3.select("#langtable").select("tr#"+d["Tag"].replace(/ /g, "_")).attr('class')
+
+				    				d3.selectAll('circle').attr('clickedCircle', 'False').attr('hoveredCircle', 'False')
+
+				    				if (tr_class == 'clicked')
+				    					{d3.select('#sellangbox').transition().duration(150).style('opacity', '0')
+				    						d3.select("#langtable").select("tr#"+d["Tag"].replace(/ /g, "_")).attr('class', 'unhovered')
+				    					d3.select(this).attr('hoveredCircle', 'True')
+				    				    }
+				    				else
+				    					{d3.select('#sellangbox').transition().duration(150).style('opacity', '0.8').text('Selected language: ' + d['language_name']).style('color', 'black').style('font-weight', 'bold')
+				    					d3.selectAll('tr').attr('class', function(d, i) {if (d3.select(this).attr('id') != 'headerrow') return 'unhovered'})
+				    					d3.select('#langtable').select('tr#'+d['Tag'].replace(/ /g, "_")).attr('class', 'clicked')
+				    					d3.select(this).attr('clickedCircle', 'True')
+				    				    }
+
+						       });
+
+
+				/*~~~~~~ DRAW TABLE  ~~~~~~*/
+
+				// Variables
+				var headers = ['language_name', 'countries', 'endangerment_degree', 'number_speakers']
+				var headers_show = ['Language', 'Spoken In', 'Degree of Endangerment', 'Number of Speakers']
+
+
+			    /* Write HEADER*/
+				var head = d3.select('#tableheader')
+					.append('tr')
+					.attr('id', 'headerrow')
+					.selectAll('th')
+					.data(headers_show)
+					.enter()
+					.append('th')
+					.text(function(d, i) {return d});
+
+				/* UP-arrow */
+				head.append('arrow')
+					.attr("direction", "up")
+					.attr('id', function(d, i){return 'up'+headers[i]})
+					.html('&#x25B2;')
+
+					// Click action
+					.on('click', function(d, i) {
+					
+						// Sort
+						if (headers[i] == 'number_speakers') return sortcol(headers[i], d3.select(this).attr('id'), numberCompareDesc);
+						else if (headers[i] == 'endangerment_degree') return sortcol(headers[i], d3.select(this).attr('id'), extinct_Asc);
+						else return sortcol(headers[i], d3.select(this).attr('id'), stringCompareAsc);})
+					
+
+					// Hover effects
+					.on('mouseover', function(d, i) {d3.select(this).style('-webkit-text-stroke', '1.2px white')})
+
+					.on('mouseout', function(d, i) {d3.select(this).style('-webkit-text-stroke-width', '0px')})
+				
+				/* DOWN-arrow */
+				head.append('arrow')
+					.attr('direction', 'down')
+					.attr('id', function(d, i){return 'down'+headers[i]})
+					.html('&#x25BC;')
+
+					// Click action
+					.on('click', function(d, i) {
+
+						//Sort
+						if (headers[i] == 'number_speakers') return sortcol(headers[i], d3.select(this).attr('id'), numberCompareAsc);
+						else if ( headers[i] == 'endangerment_degree') return sortcol(headers[i], d3.select(this).attr('id'), extinct_Dsc)
+						else return sortcol(headers[i], d3.select(this).attr('id'), stringCompareDesc);})
+
+					
+					// Hover effects
+					.on('mouseover', function(d, i) {d3.select(this).style('-webkit-text-stroke', '1.2px white')})
+					.on('mouseout', function(d, i) {d3.select(this).style('-webkit-text-stroke-width', '0px')})
+
+				d3.select('#up'+headers[1]).remove()
+				d3.select('#down'+headers[1]).remove()
+
+				
+
+				d3.select('#langtable')
+					.append('tbody')
+					.attr('class', 'tablescroll')
+					.attr("id", "tabledata")
+					.selectAll('tr')
+				    .data(all_data)
+				    .enter()
+				    .append('tr')
+				    .attr("id", function(d){return d["Tag"].replace(/ /g, "_")})
+				    .attr('class', 'unhovered')
+				    .html(function(d,i){return '<td>'+d.language_name+'</td><td>'+d.countries+'</td><td>'+d.endangerment_degree+'</td><td>'+d.number_speakers+'</td>'; })
+				    
+				    // Hover table row
+
+				    // Mouse over
+				    .on('mouseover', function(d, i) {
+				    	// Polygons
+				    	hoverpol(d.iso_alpha, "show", polydata, map, d3.select(this));
+
+
+						// Info-box
+						d3.select('#tableholder')
+					       	 .transition().duration(300)
+					       	 .attr('opacity', '0.8')
+
+					       	 d3.select('#wikiheader')
+					       	 .text(d['language_name'])
+					       	 .style('text-align', 'center')
+					       	 .style('font-weight', 'bold')
+					       	 .style("font-size", "14px")							       	 
+
+					       	 d3.select('#wikirows')
+					       	 .text(d['description'])
+					       	 .style("font-size", "14px")
+
+				       	 	d3.select('#wikiinfo')
+							 .text('Source: Wikipedia. Search term: ' + d['term'])
+							 .style('font-size', '14px')							       	 
+
+				    	// Circles in map
+						if (d3.select(this).attr('clickedCircle') == 'True'){
+				    		d3.selectAll('circle').attr('hoveredCircle', function(dc, ic) {if (ic == i) return 'False'; else return 'False'})
+				    	}
+				    	else {d3.selectAll('circle').attr('hoveredCircle', function(dc, ic) {if (ic == i) return 'True'; else return 'False'})}
+
+			       		// Table row
+				    	if (d3.select(this).attr('class') == 'unhovered')
+				    		return d3.select(this).attr('class', 'hovered')
+						       	 				    	
+				    })
+
+					// Mouse out
+				    .on('mouseout', function(d, i) {
+				    	// Polygons
+				    	hoverpol(d.iso_alpha, "hide", polydata, map, d3.select(this));
+
+				    	// Circles
+						d3.selectAll('circle').attr('hoveredCircle', function(dc, ic) {if (ic == i) return 'False'; else return 'False'})
+
+				  		// Info-box
+						d3.select('#tableholder')
+					       	 .transition().duration(300)
+					       	 .attr('opacity', '0')
+			       		
+			       		// Table row
+				    	if (d3.select(this).attr('class') == 'hovered')
+				    		return d3.select(this).attr('class', 'unhovered')})
+				    
+				    //Click
+				    .on('click', function(d, i) {
+
+				    	// Polygons
+				    	hoverpol(d.iso_alpha, "click", polydata, map, d3.select(this))
+
+				    	if ((d3.select(this).attr('class') == 'hovered')){
+				    		
+				    		// Unhover all
+				    		d3.selectAll('tr').attr('class', function(d, i) {if (d3.select(this).attr('id') != 'headerrow') return 'unhovered'})
+
+				    		// Set this attribute to clicked
+				    		// Table
+				    	    d3.select(this).attr('class', 'clicked')
+
+				    	    // Circle
+
+				    		d3.selectAll('circle').attr('clickedCircle', function(dc, ic) {if (ic == i) return 'True'; else return 'False'})
+				    		d3.selectAll('circle').attr('hoveredCircle', function(dc, ic) {if (ic == i) return 'False'; else return 'False'})
+				    		
+
+				    		// Selected text
+				    		d3.select('#sellangbox').transition().duration(150).style('opacity', '0.8').text('Selected language: ' + d['language_name']).style('color', 'black').style('font-weight', 'bold')}
+
+				    	else{
+				    		
+				    		d3.select(this).attr('class', 'hovered')
+
+				    		d3.selectAll('circle').attr('clickedCircle', 'False')
+
+				    		d3.select('#sellangbox').transition().duration(150).style('opacity', '0');}
+
+
+				    })
+
+					
+					/*~~~~~~ VIEW BUTTONS  ~~~~~~*/
+
+					var speakersScale = d3.scalePow().exponent(0.5)
+    									.domain([0, 7500000])
+    									.range([3.5, 10]);
+
+    				var langScale = d3.scalePow().exponent(0.5)
+    									.domain([0,16])
+    									.range([0.08,0.3]);
+
+					var endangermentScale = d3.scaleOrdinal()
+    									.domain(['Vulnerable', 'Definitely endangered', 'Severely endangered', 'Critically endangered', 'Extinct'])
+    									.range([0.1, 0.2, 0.35, 0.7, 0.8].reverse())
+    									
+
+					function colorScale(d){return "red"};
+
+					function endangermentColorScale(d){
+						return d3.interpolateRdYlGn(endangermentScale(d))};
+
+					function languageColorScale(d){
+						return d3.interpolateGreys(langScale(d))};
+
+    				var radiusScale = d3.scaleLinear()
+    									.range([3.5, 3.5]);
+
+
+    				function polygonScale(d){return d3.interpolateGreys(0.1)};
+
+    				
+    				var officialScale = d3.scaleLinear()
+    									.range([d3.interpolateGreys(0.1)]);    									
+
+    				var views = {"speakers" : {"on": speakersScale, "off": radiusScale},
+    							 "endangerment" : {"on": endangermentColorScale, "off": colorScale},
+    							 "official" : {"on": languageColorScale, "off": polygonScale},
+    							}
+
+
+					function changeview (view, state, views, Dcircles, Dcountries){
+						
+						// Circle color
+						if (view == "endangerment"){
+							Dcircles.attr("fill", function(d, i){return views[view][state](d["endangerment_degree"]);});
+						}
+
+						// Circle radius
+						if (view == "speakers"){
+							
+							Dcircles.attr("r", function(d, i){return views[view][state](d["number_speakers"]);})
+						
+						}
+
+						// Polygon color
+						if (view == "official"){
+							Dcountries.attr("fill", function(d, i){ 
+
+								global_variable = Dcountries._groups[0][i];
+								ids = global_variable.id;
+								idl=ids.replace('i',"");
+								alpha = isodata[i].iso_alpha;
+								number_lang = isodata[i].iso_lang;
+
+
+								return views[view][state](number_lang);})};
+											
+
+					};
+
+
+
+					var legendData = [{"id" :"languages",     "text": "Languages"},
+									  {"id" :"dummy",     "text": Array(110).join("-")},
+									  {"id" :"toggle",     "text": ""},
+									  {"id" :"speakers",     "text": "Speakers"},
+									  {"id" :"endangerment", "text": "Endagerment"},
+									  {"id" :"official",     "text": "Number of official"},
+									  {"id" :"dummy2",     "text": "languages"}]
+					
+					var top   = 20
+					var space = 25
+					var indent = 12
+					var legend = d3.select("#legend")
+					               .selectAll("g")
+					               .data(legendData)
+					               .enter()
+					               .append("g")
+					               .attr("id", function(d){return d.id})
+					               .attr("transform", function(d, i){return "translate("+indent+","+(top+i*space)+")";});
+
+					var buttongroup = legend.append("g")
+					                        .attr("class", "btngroup");
+
+					buttongroup.append("text")
+				               .text("off")
+				               .attr("font-size", "15px")
+				               .attr("font-family", "Courier")
+				               .attr("transform", "translate(3, 9)")
+				               .attr("color", "black");
+
+					buttongroup.append("rect")
+								.attr("feature", function(d, i) {return d.id})
+								.attr("class", "unclicked")
+		              			.attr("height", 20)
+		              			.attr("width", 35)
+		              			.attr("fill", "blue")
+		              			.attr("opacity", "0.2")
+		              			.attr("rx", "2")
+		              			.attr("ry", "2")
+		              			.attr("transform", "translate(0, -5)")
+		              			.attr("stroke", "black")
+		              			.attr("stroke-width", "1px")
+								.on("click", function(d, i){
+									  	var state = d3.select(this).attr("class")
+									  	var feature = d3.select(this).attr("feature")
+									  	var text    = d3.select("#"+feature).select(".btngroup").select("text")
+
+									  	
+									  	if (state == "unclicked"){
+									  		var state = "on";
+									  		d3.select(this).attr("class", "clicked")
+									  		text.text("on")
+									  	}
+
+									  	else {
+									  		var state = "off";
+									  		d3.select(this).attr("class", "unclicked")
+									  		text.text("off")
+
+									  	}
+
+									  	changeview(feature, state, views, circles, countries)
+
+									  })
+								.on("mouseover", function(d, i){
+									d3.select(this).attr("opacity", "0.4")
+
+								}) 
+								.on("mouseout", function(d, i){
+									d3.select(this).attr("opacity", "0.2")
+
+								})
+
+					// Remove toggle languages on/off
+			        d3.select("#languages").select(".btngroup").select("rect").remove()
+			        d3.select("#languages").select(".btngroup").select("text").remove()
+				     
+					// Remove toggle languages on/off
+			        d3.select("#dummy").select(".btngroup").select("rect").remove()
+			        d3.select("#dummy").select(".btngroup").select("text").remove()				     
+					
+					// Remove toggle languages on/off
+			        d3.select("#toggle").select(".btngroup").select("rect").remove()
+			        d3.select("#toggle").select(".btngroup").select("text").remove()
+
+
+					// Remove toggle languages on/off
+			        d3.select("#dummy2").select(".btngroup").select("rect").remove()
+			        d3.select("#dummy2").select(".btngroup").select("text").remove()			        				     		    
+
+					// Text
+					legend.append("g")
+					      .append("text")
+					      .text(function(d){return d.text})
+					      .attr("color", "black")
+					      .attr("font-size", "14px")
+					      .attr("transform", "translate(40, 9)")
+
+
+					legend.append("g")
+							.attr("class", "shapes")
+		      				.attr("transform", "translate(140, 6)")
+
+		      		toggle = d3.select("#dummy")
+		      		           .select("text")
+		      		           .attr("stroke", "lightgray")
+		      		           .attr("font-size", "5px")
+
+					toggle = d3.select("#toggle");
+
+					toggle.select("text")
+			  			  .text("Features")
+			  			  .style("font-weight", "bold")
+					toggle.select(".shapes")
+						  .append("text")
+						  .style("font-size", "14px")
+			  			  .text("less - more")
+			  			  .style("font-weight", "bold")
+						  .attr("transform", "translate(4, 0)")			  			  
+					      
+						  
+
+
+
+					languages = d3.select("#languages")
+					  			  .select(".shapes")
+					  			  .append("circle")
+					  			  .attr("opacity", "0.8")
+					  			  .attr("transform", "translate(15, 0)")
+							      .attr("r", speakersScale(900000))
+								  .attr("fill", "red");
+
+
+					speakers = d3.select("#speakers")
+					  			 .select(".shapes");
+
+					speakers.append("circle")
+							  .attr("r", speakersScale(900000))
+							  .attr("fill", "red")
+							  .attr("opacity", "0.8")
+							  .attr("transform", "translate(15, 0)")
+
+					speakers.append("circle")
+							  .attr("r", speakersScale(7000000))
+							  .attr("opacity", "0.8")
+							  .attr("transform", "translate(54, 0)")
+							  .attr("fill", "red")
+					  
+
+					endangerment = d3.select("#endangerment")
+					  				 .select(".shapes");
+
+					endangerment.append("circle")
+							  .attr("r", speakersScale(900000))
+							  .attr("transform", "translate(15, 0)")
+							  .attr("opacity", "0.8")
+							  .attr("fill", endangermentColorScale("Vulnerable"))
+
+					endangerment.append("circle")
+							  .attr("r", speakersScale(900000))
+							  .attr("transform", "translate(34, 0)")
+							  .attr("opacity", "0.8")
+							  .attr("fill", endangermentColorScale("Severely endangered"))
+
+					endangerment.append("circle")
+							  .attr("r", speakersScale(900000))
+							  .attr("transform", "translate(54, 0)")
+							  .attr("opacity", "0.8")
+							  .attr("fill", endangermentColorScale("Extinct"))
+
+
+
+					official = d3.select("#official")
+					  				 .select(".shapes");
+
+					var countryPol = "m5.55932,0.93919l5.64972,2.73593l1.80791,-2.04175l0.96045,-0.81668l0.67797,0.08167l1.24294,0.24501l1.12994,0.65335l1.29944,-0.8167l1.41243,0.40836l0.0565,-0.89836l0.84746,-0.49002l1.35593,2.53175c0,0.04083 -1.01694,0.1225 -1.01694,0.20416c0,0.08168 -0.39548,1.47006 -0.39548,1.42921c0,0.04085 -0.96045,-0.28584 -0.96045,-0.32666c0,0.04082 -0.39548,1.18419 -0.39548,1.14336c0,0.04083 -1.12994,0.53085 -1.12994,0.49002c0,0.04083 -0.39548,1.1842 -0.39548,1.14337c0,0.04083 -0.28249,0.85753 -0.28249,0.81668c0,0.04085 0.67797,0.36751 0.67797,0.32669c0,0.04082 1.01694,1.26587 1.01694,1.22504c0,0.04083 -0.45197,2.57259 -0.45197,2.53175c0,0.04083 -1.12994,0.6125 -1.12994,0.57169c0,0.04082 -1.35593,-0.77586 -1.35593,-0.8167c0,0.04083 -1.24294,-0.53085 -1.24294,-0.57169c0,0.04083 0.113,1.26587 0.113,1.22504c0,0.04083 -1.01695,1.02087 -1.01695,0.98003c0,0.04085 0.16949,1.34755 0.16949,1.30672c0,0.04083 -0.67797,0.85753 -0.67797,0.8167c0,0.04083 -0.84746,-0.44919 -0.84746,-0.49004c0,0.04085 -0.67797,-1.18419 -0.67797,-1.22502c0,0.04083 -0.56497,-0.20418 -0.56497,-0.24501c0,0.04083 -0.79096,0.61252 -0.79096,0.57169c0,0.04083 -0.62147,-0.28584 -0.62147,-0.32668c0,0.04083 -0.62147,-2.24591 -0.62147,-2.28674c0,0.04083 -1.63842,1.59256 -1.63842,1.55171c0,0.04085 -1.24294,0.44919 -1.24294,0.40836c0,0.04083 -0.79096,-0.53085 -0.79096,-0.57169c0,0.04083 -0.90395,-0.53085 -0.90395,-0.57169c0,0.04083 -0.67797,0.1225 -0.67797,0.08167c0,0.04083 -0.56497,0.6942 -0.56497,0.65335c0,0.04085 -1.58192,-1.42921 -1.58192,-1.47003c0,0.04082 1.01695,-0.20419 1.01695,-0.24503c0,0.04083 0.79096,-0.85751 0.79096,-0.89835c0,0.04083 -1.12994,-2.16426 -1.12994,-2.20508c0,0.04082 0.56497,-0.61252 0.56497,-0.65337c0,0.04085 -0.67797,-0.69418 -0.67797,-0.73502c0,0.04083 0.33899,-0.85753 0.33899,-0.89836c0,0.04083 0.84746,-0.28584 0.84746,-0.32668c0,0.04083 -0.96045,-0.85754 -0.96045,-0.89836c0,0.04082 -0.67797,-0.04083 -0.67797,-0.08168c0,0.04085 -0.113,-0.93919 -0.113,-0.98003c0,0.04083 0.84746,-1.67422 0.84746,-1.71506l2.71186,-0.53085z";
+
+					official.append("path")
+						    .attr("d", countryPol)
+						    .attr("fill", languageColorScale(0))
+						    .attr("opacity", "0.6")
+						    .attr("stroke-width", "1px")
+						    .attr("stroke", "darkgray")
+						    .attr("transform", "translate(6, -8)")
+
+					official.append("path")
+							.attr("d", countryPol)
+						    .attr("fill", languageColorScale(16))
+						    .attr("opacity", "0.6")
+						    .attr("stroke-width", "1px")
+						    .attr("stroke", "darkgray")
+						    .attr("transform", "translate(44, -8)")
+				
+				sortcol('language_name', 'downlanguage_name', stringCompareDesc)
+			     
+
+					}); //End map read
+				}); //End UNESCO read
+			}); //End ISO-MAP read
+		
+		}; //End init function
+
+    </script>
+    </head>
+
+	<body>
+
+	<div>
+		<hr><h1>Endangered Languages of Europe</h1><br>
+		<h3>And Where to Find Them</h3><hr>
+	</div>
+
+	<div class="row">
+		
+			<div class="col-md-6">
+				<h3>Motivation</h3>
+				<p>
+				In 2011 The Guardian published an <a href=“https://www.theguardian.com/world/2011/apr/13/mexico-language-ayapaneco-dying-out”>article</a> about the last two speakers of Ayapenco would not speak to eachother, bringing attention to the notion of dying languages. Ayapaneco is just one example of a larger number of languages that are at risk or vulnerable to extinction.</p><p> 
+
+				In order to raise awareness about the language extinction phenomenon, UNESCO publishes and updates a list of endangered languages. UNESCO rates the <a href=“http://www.unesco.org/new/en/culture/themes/endangered-languages/language-vitality/“>vitality</a> of a language based on demographic criteria like "number of speakers", as well as socio-political factors like "political repression" and "available educational material".</p><p>
+				By geographically exploring the data from the UNESCO list, accompanied by more detailed descriptions of the history of the languages, we wish to communicate the story of the endangered languages of Europe. Furthermore, we seek to visualize how politics might influence language vitality by encoding within the map information about the number of official languages spoken in the individual countries.</p><p>The purpose of this project is to introduce people with a non-linguistic background to this issue, by creating a visualization that supports exploring the data through a simple, user friendly, interactive experience. </p></br>
+				
+				<h3>Navigating the Visualization</h3><p>In the map, each circle represents a language. Each circle can be hovered over to 
+				show which language it represents as well as some information about the language. The countries in which the language is spoken will also be highlighted. The circles can be clicked which changes the color of the countries that their language is spoken in. Only one circle can be selected at a time.</p><p>
+				In the legend, features can be toggled on and off to encode more or less information in the circles.</p><p>
+				The languages and their corresponding information can also be scrolled through using the table below the map. As with the circles, the languages can be hovered over and clicked to display their location and the countries they are spoken in on the map. Furthermore, three of the columns can be sorted in ascending or descending order using the arrows next to the column headers.</p>
+			
+			</div>
+			<div class="col-md-6">
+				<h3>The Dataset</h3>
+				<p>The dataset visualized is obtained from <a href="https://www.kaggle.com/the-guardian/extinct-languages">Kaggle</a>, which provides a csv of endangered languages published by UNESCO. The dataset consists of a list of endangered languages across the world with the following features: name, country spoken in, country codes, number of speakers, geo location, and degree of endangerment. The degree of endangerment category ranges from vulnerable to extinct.</p><p>Additional information is obtained from Wikipedia to include an official language count for countries and a description of each language that are directly encoded into the visualization. It should be noted that the latitude and longitude coordinates provided in the dataset are an approximation of the geographical epicenter of where the language is spoken, and as such the points should be considered as a purposive sample.</p><br>
+				
+				<h3>Whose Languages are Endangered?</h3><p>
+				From the visualization, we can observe different tendencies. If we toggle the speaker and endangerment features, we find that languages with more speakers are generally less endangered. However, the opposite is not necessarily true: among languages with few speakers we do find brightly colored green dots, which indicate they are not severely endangered. </p>
+				<p>
+				Furthermore, if we toggle the number of official languages per country, we see that generally, endangered languages spoken in countries with a higher number of official languages are less endangered. For example, if we look at Germany, which has a high number of offical languages, you can observe that most of the points are green irrespective of how many speakers there are. 
+				</p>
+ 				<p>
+				However, as we briefly discussed above, the point data is not truly representative of where the language is spoken. This means that the observable correlation between a point on the map (language) and the country where it is located is not necessarily precise. 
+				</p>
+				<p>
+				In order to mend the problem of the languages being associated with more than one country, it would be more suitable to represent the distribution of endangerment vs. the number of official languages by viewing languages as polygons instead of dots. 
+				
+				However, for the purpose of exploring the data, being able to pinpoint each language using one coordinate gives a better overview of the distribution of the langugages.
+				</p>
+			
+			</div>
+	</div>
+
+	<row>
+	<div>
+		<!-- <h1>asdasd</h2>-->
+	</div>
+
+	</row>
+
+	<div>
+	<svg class="mapsvg">
+		
+		<g id="data">
+			<g id="countries"></g>
+			<g id="selected"></g>
+			<g id="clicked"></g>			
+		</g>
+		
+		<text id='sellangbox', opacity='0' x='15' y='220' font-size="14px"></text>
+		
+		<g id="legend">
+			<rect height="190" width="230" rx="2" ry="2" transform="translate(5, 5)" fill='lightgray' opacity='0.2'></rect>
+		</g>
+
+	</svg>
+
+	<table cellspacing="0" cellpadding="0" id="langtable">
+		<thead id="tableheader">
+		</thead>
+	</table>
+</div>
+
+<div id="footnote">
+	By Alejandro Hernandez, Sidsel Boldsen &amp; Mai-Britt Gudmundsson Kristiansen
+</div>	
+	</body>
+</html>
